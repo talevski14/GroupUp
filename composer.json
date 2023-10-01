@@ -1,0 +1,22 @@
+{
+  "require": {
+    "slim/slim": "4.*",
+    "slim/psr7": "^1.6",
+    "php-di/slim-bridge": "^3.4",
+    "twig/twig": "^3.0",
+    "slim/twig-view": "^3.3",
+    "ext-pdo": "*",
+    "rakit/validation": "^1.4",
+    "guzzlehttp/guzzle": "^7.0",
+    "slim/flash": "^0.4.0",
+    "kanellov/slim-twig-flash": "^0.2.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Controllers\\": "./src/controllers/",
+      "Core\\": "./src/core/",
+      "Middleware\\": "./src/middleware",
+      "App\\Error\\Renderer\\" : "./src/Error/Renderer"
+    }
+  }
+}

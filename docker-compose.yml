@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  nginx:
+    build:
+      context: .
+      dockerfile: nginx.dockerfile
+    ports:
+      - "80:80"
+    volumes:
+      - ./:/var/www/html
+    depends_on:
+      - mysql
+      - php
+    networks:
+      - my_net
+  mysql:
+    image: mariadb:latest
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: groupup
+      MYSQL_USER: groupup
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: secret
+    volumes:
+      - ./mysql:/var/lib/mysql
+    networks:
+      - my_net
+  php:
+    build:
+      context: .
+      dockerfile: php.dockerfile
+    volumes:
+      - ./:/var/www/html
+    networks:
+      - my_net
+networks:
+  my_net:
+    driver: bridge
