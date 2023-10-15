@@ -19,7 +19,7 @@ Since the app is built in a docker container, you need to take a few steps befor
 
 - Clone the GroupUp repository from GitLab:
 ```bash
-git clone https://practice.grabit.io/zoran.trpcheski/groupup.git
+git clone https://github.com/talevski14/GroupUp.git
 ```
 
 - Change the directory into the GroupUp directory:
