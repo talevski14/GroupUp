@@ -17,7 +17,7 @@ Since the app is built in a docker container, you need to take a few steps befor
 
 - Install Docker Compose. You can find the installation instructions for your operating system here: https://docs.docker.com/compose/install/
 
-- Clone the GroupUp repository from GitLab:
+- Clone the GroupUp repository from GitHub:
 ```bash
 git clone https://github.com/talevski14/GroupUp.git
 ```
