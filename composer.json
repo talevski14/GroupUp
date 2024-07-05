@@ -9,7 +9,8 @@
     "rakit/validation": "^1.4",
     "guzzlehttp/guzzle": "^7.0",
     "slim/flash": "^0.4.0",
-    "kanellov/slim-twig-flash": "^0.2.0"
+    "kanellov/slim-twig-flash": "^0.2.0",
+    "robmorgan/phinx": "^0.16.1"
   },
   "autoload": {
     "psr-4": {
