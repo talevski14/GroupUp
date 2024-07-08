@@ -10,7 +10,10 @@
     "guzzlehttp/guzzle": "^7.0",
     "slim/flash": "^0.4.0",
     "kanellov/slim-twig-flash": "^0.2.0",
-    "robmorgan/phinx": "^0.16.1"
+    "robmorgan/phinx": "^0.16.1",
+    "doctrine/orm": "^3.2",
+    "symfony/yaml": "^6.4",
+    "symfony/cache": "^6.4"
   },
   "autoload": {
     "psr-4": {
