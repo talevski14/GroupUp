@@ -55,4 +55,12 @@ $container->set('weather', function() use ($container) {
     return new Weather($container->get("client"), $container->get("config"));
 });
 
+$container->set('settings', function () {
+    return [
+        'doctrine' => require __DIR__ . '/../config/doctrine.php'
+    ];
+});
 
+$container->set('EntityManager', function () use ($container) {
+    return $container->get('settings')['doctrine'];
+});
