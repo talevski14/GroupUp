@@ -4,8 +4,10 @@ namespace Controllers;
 
 use DI\DependencyException;
 use DI\NotFoundException;
+use models\Society;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use services\UserService;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
@@ -29,25 +31,31 @@ class DashboardController extends Controller
 
         $database = $this->container->get("db");
 
-        $userDb = $database->query("select * from users where username = :username", [
-            ':username' => $username
-        ])->find();
+//        find user
+//        $userDb = $database->query("select * from users where username = :username", [
+//            ':username' => $username
+//        ])->find();
+        $userDb = $this->userService->getUserByUsername($username);
 
-        $societies = [];
-        if ($userDb["societies"]) {
-            $societiesStr = explode(";", $userDb["societies"]);
-            array_shift($societiesStr);
+//        find societies by user
+        $societies = $userDb->getSocieties();
 
-            foreach ($societiesStr as $society) {
-                $societyDb = $database->query("select * from societies where id = :id", [
-                    ":id" => $society
-                ])->find();
-                $societies[] = $societyDb;
-            }
-        }
+//        if ($userDb["societies"]) {
+//            $societiesStr = explode(";", $userDb["societies"]);
+//            array_shift($societiesStr);
+//
+//            foreach ($societiesStr as $society) {
+//                $societyDb = $database->query("select * from societies where id = :id", [
+//                    ":id" => $society
+//                ])->find();
+//                $societies[] = $societyDb;
+//            }
+//        }
 
         return $this->container->get("view")->render($response, "society/index.view.php", [
-            "profileimg" => $userDb["profpic"],
+            // find profile picture by username
+            "profileimg" => $userDb->getProfilePicture(),
+//            "profileimg" => $userDb["profpic"],
             "header" => "Societies",
             "societies" => $societies,
             "username" => $_SESSION['user']['username'],
@@ -66,12 +74,15 @@ class DashboardController extends Controller
 
         $username = $_SESSION['user']['username'];
 
-        $userDb = $database->query("select * from users where username = :username", [
-            ':username' => $username
-        ])->find();
+//        $userDb = $database->query("select * from users where username = :username", [
+//            ':username' => $username
+//        ])->find();
+        $userDb = $this->userService->getUserByUsername($username);
 
         return $this->container->get("view")->render($response, "society/create.view.php", [
-                "profileimg" => $userDb["profpic"],
+            // find profile picture by username
+                "profileimg" => $userDb->getProfilePicture(),
+//                "profileimg" => $userDb["profpic"],
                 "header" => "Create a society"
             ]
         );
@@ -90,46 +101,55 @@ class DashboardController extends Controller
 
         $description = $data["description"];
 
-        $userDb = $database->query("select * from users where username = :username", [
-            ':username' => $username
-        ])->find();
+//        $userDb = $database->query("select * from users where username = :username", [
+//            ':username' => $username
+//        ])->find();
+        $userDb = $this->userService->getUserByUsername($username);
+        $entityManager = $this->container->get("entityManager");
 
         $name = $data["name"];
 
-        $database->query("insert into societies(name,members,description) values(:name, :members, :description)", [
-            ":name" => $name,
-            ":members" => ";" . $username,
-            ":description" => $description
-        ]);
+        $societyID = $this->societyService->addNewSociety($name, $description, $userDb);
 
-        $societyID = $database->getConnection()->lastInsertId();
+//        $database->query("insert into societies(name,members,description) values(:name, :members, :description)", [
+//            ":name" => $name,
+//            ":members" => ";" . $username,
+//            ":description" => $description
+//        ]);
+
+//        $societyID = $database->getConnection()->lastInsertId();
 
         $files = $request->getUploadedFiles();
 
         if ($files['uploadfile']->getSize() !== 0) {
             $file = $files['uploadfile'];
 
-            $society = $database->query("select * from societies where id = :id", [
-                ":id" => $societyID
-            ])->find();
+//            $society = $database->query("select * from societies where id = :id", [
+//                ":id" => $societyID
+//            ])->find();
 
-            $banner = $society['id'] . "-banner.jpg";
+//            $banner = $society['id'] . "-banner.jpg";
+            $banner = $societyID . "-banner.jpg";
 
             $folder = __DIR__ . "/../../public/images/society/" . $banner;
 
             $file->moveTo($folder);
 
-            $database->query("update societies set banner = :banner where id = :id", [
-                ":banner" => "/images/society/" . $banner,
-                ":id" => $societyID
-            ]);
+//            $database->query("update societies set banner = :banner where id = :id", [
+//                ":banner" => "/images/society/" . $banner,
+//                ":id" => $societyID
+//            ]);
+            $this->societyService->addBanner($societyID, $banner);
+//            $society->setBanner("/images/society/" . $banner);
+//            $entityManager->persist($society);
+//            $entityManager->flush($society);
         }
 
-        $societies = $userDb["societies"] . ";" . $societyID;
-        $database->query("update users set societies = :societies where username = :username", [
-            ":societies" => $societies,
-            ":username" => $username
-        ]);
+//        $societies = $userDb["societies"] . ";" . $societyID;
+//        $database->query("update users set societies = :societies where username = :username", [
+//            ":societies" => $societies,
+//            ":username" => $username
+//        ]);
 
         require __DIR__ . "/../core/functions.php";
 

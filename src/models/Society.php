@@ -7,7 +7,7 @@ use Doctrine\Common\Collections\Collection;
 
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity]
+#[ORM\Entity (repositoryClass: __DIR__ . "/../repositories/SocietyRepository")]
 #[ORM\Table(name: 'societies')]
 class Society
 {
@@ -31,7 +31,7 @@ class Society
     private Collection $events;
 
     /** @var Collection<int, User> */
-    #[ORM\ManyToMany(targetEntity: User::class, mappedBy: "society")]
+    #[ORM\ManyToMany(targetEntity: User::class, inversedBy: "society")]
     private Collection $members;
 
     public function __construct()
@@ -143,6 +143,7 @@ class Society
     public function addMember(User $member): void
     {
         $this->members->add($member);
+        $member->enterSociety($this);
     }
 
 

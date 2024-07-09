@@ -8,6 +8,10 @@ use Core\Database;
 use Core\Weather;
 use GuzzleHttp\Client;
 use Psr\Container\ContainerInterface;
+use services\implementation\SocietyServiceImpl;
+use services\implementation\UserServiceImpl;
+use services\SocietyService;
+use services\UserService;
 use Slim\Flash\Messages;
 use Slim\Views\Twig;
 
@@ -61,6 +65,14 @@ $container->set('settings', function () {
     ];
 });
 
-$container->set('EntityManager', function () use ($container) {
+$container->set('entityManager', function () use ($container) {
     return $container->get('settings')['doctrine'];
+});
+
+$container->set(UserService::class, function ($container) {
+    return new UserServiceImpl($container->get('entityManager'));
+});
+
+$container->set(SocietyService::class, function ($container) {
+    return new SocietyServiceImpl($container->get('entityManager'));
 });
