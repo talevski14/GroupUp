@@ -7,7 +7,7 @@ use Doctrine\Common\Collections\Collection;
 
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity(repositoryClass: __DIR__ . "/../repositories/UserRepository")]
+#[ORM\Entity(repositoryClass:"\src\repositories\UserRepository")]
 #[ORM\Table(name: 'users')]
 class User
 {
@@ -221,6 +221,11 @@ class User
     public function getSocieties(): Collection
     {
         return $this->societies;
+    }
+
+    public function leaveSociety(Society $society) : void
+    {
+        $this->getSocieties()->remove($society);
     }
 
 }

@@ -34,15 +34,10 @@ class HomeController extends Controller
 
         $username = $data['username'];
 
-        $database = $this->container->get("db");
+        $userDb = $this->userService->getUserByUsername($username);
 
-
-        $userDb = $database->query("select * from users where username = :username", [
-            ':username' => $username
-        ])->find();
-
-        if ($userDb) {
-            if($userDb['active'] === 0) {
+        if ($userDb !== null) {
+            if(!$userDb->isActive()) {
                 return $this->container->get("view")->render($response, "account/index.view.php", [
                     'errorActivation' => 'Your account is currently deactivated. Please activate your account by clicking this link.',
                     'filled' => $data,
@@ -50,7 +45,7 @@ class HomeController extends Controller
                 ]);
             }
             $password = $data['password'];
-            $password_db = $userDb["password"];
+            $password_db = $userDb->getHashedPassword();
 
             if (password_verify($password, $password_db)) {
                 require __DIR__ . "/../core/functions.php";

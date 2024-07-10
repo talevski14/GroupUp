@@ -36,4 +36,23 @@ class SocietyServiceImpl implements SocietyService
         $society->setBanner($banner);
         $this->entityManager->getRepository(Society::class)->saveSociety($society);
     }
+
+    public function getSociety(int $societyId) : Society
+    {
+        return $this->entityManager->getRepository(Society::class)->find($societyId);
+    }
+
+    public function leaveSociety(int $userId, int $societyId): void
+    {
+        $society = $this->getSociety($societyId);
+        $user = $this->entityManager->getRepository(User::class)->find($userId);
+
+        $society->removeMember($user);
+        $this->entityManager->getRepository(Society::class)->saveSociety($society);
+        if($society->getMembers()->isEmpty()) {
+            $this->entityManager->getRepository(Society::class)->removeSociety($society);
+        }
+
+        // TODO delete events created by user
+    }
 }

@@ -16,4 +16,12 @@ class SocietyRepository extends EntityRepository
         $entityManager->flush();
         return $society->getId();
     }
+
+    public function removeSociety($society): void
+    {
+        $entityManager = $this->getEntityManager();
+
+        $entityManager->remove($society);
+        $entityManager->flush();
+    }
 }
