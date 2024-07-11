@@ -1,9 +1,10 @@
 <?php
 
-namespace services;
+namespace Services;
 
-use models\Society;
-use models\User;
+use Models\Link;
+use Models\Society;
+use Models\User;
 
 interface SocietyService
 {
@@ -11,4 +12,7 @@ interface SocietyService
     public function addBanner(int $societyId, string $banner);
     public function getSociety(int $societyId) : Society;
     public function leaveSociety(int $userId, int $societyId);
+    public function enterSocietyByUri(string $username, string $uri);
+    public function findSocietyByUri($uri) : ?Society;
+    public function generateLinkForSocietyId($societyId) : ?Link;
 }

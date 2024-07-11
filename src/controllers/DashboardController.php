@@ -4,10 +4,10 @@ namespace Controllers;
 
 use DI\DependencyException;
 use DI\NotFoundException;
-use models\Society;
+use Models\Society;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use services\UserService;
+use Services\UserService;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
@@ -116,96 +116,37 @@ class DashboardController extends Controller
     {
         $params = $request->getQueryParams();
         $id = $params['id'];
-        $database = $this->container->get("db");
 
-        $link = $database->query("select * from links where body = :body", [
-            ":body" => $id
-        ])->find();
+        $link = $this->linkService->findLinkByUri($id);
+        if($link !== null) {
 
-        $society = $database->query("select * from societies where id = :id", [
-            ":id" => $link['society']
-        ])->find();
-        $time = $link['created_on'];
+            $isValid = $this->linkService->checkIfValid($id);
 
-        $members = $society['members'];
-        $members = explode(";", $members);
-        array_shift($members);
+            $username = $_SESSION['user']['username'];
+            $society = $this->societyService->findSocietyByUri($id);
 
-        $currentTime = date("y-m-d H:i:s", strtotime('-1 hours'));
-        if (strtotime($time) < strtotime($currentTime)) {
-            $database->query("delete from links where society = :society", [
-                ":society" => $link['society']
-            ]);
-            return $this->container->get("view")->render($response, "errors/410.view.php");
+            if (!$isValid) {
+                $this->linkService->removeLink($link);
+                return $this->container->get("view")->render($response, "errors/410.view.php");
+            } else {
+                $this->societyService->enterSocietyByUri($username, $id);
+            }
+
+            $this->container->get('flash')->addMessage('welcome', "We are so glad to see you! Welcome to " . $society->getName() . "!");
+            header("location: /society/" . $society->getId());
+            return $response;
         }
-
-        $username = $_SESSION['user']['username'];
-        $user = $database->query("select * from users where username = :username", [
-            ":username" => $username
-        ])->find();
-
-        $members = $society["members"] . ";" . $username;
-        $database->query("update societies set members = :members where id = :id", [
-            ":members" => $members,
-            ":id" => $society['id']
-        ]);
-
-        $societies = $user["societies"] . ";" . $society['id'];
-        $database->query("update users set societies = :societies where username = :username", [
-            ":societies" => $societies,
-            ":username" => $username
-        ]);
-
-        $this->container->get('flash')->addMessage('welcome', "We are so glad to see you! Welcome to " . $society['name'] . "!");
-        header("location: /society/" . $society['id']);
-        return $response;
+        else return $this->container->get("view")->render($response, "errors/404.view.php");
     }
 
     public function generate(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
-        require __DIR__ . "/../core/functions.php";
-        $uuid = guidv4();
         $societyID = $args['id'];
 
-        $database = $this->container->get("db");
-
-        $society = $database->query("select * from societies where id = :id", [
-            ":id" => $societyID
-        ])->find();
-
-        $oldLink = $database->query("select * from links where society = :society", [
-            ":society" => $societyID
-        ])->find();
-
-        if($oldLink) {
-            $time = $oldLink['created_on'];
-            $currentTime = date("y-m-d H:i:s", strtotime('-1 hours'));
-            $bool = strtotime($time) < strtotime($currentTime);
-
-            if($bool) {
-                $database->query("delete from links where society = :society", [
-                    ":society" => $oldLink['society']
-                ]);
-            }
-        }
-
-        if ($oldLink && !$bool) {
-            return $this->container->get("view")->render($response, "event/inviteLink.view.php", [
-                "link" => $oldLink['body'],
-                "society" => $society['name'],
-                "societyID" => $societyID
-            ]);
-        }
-
-        $database->query("insert into links(society,body,created_on) values(:society,:body,:created_on)", [
-            ":society" => $societyID,
-            ":body" => $uuid,
-            ":created_on" => date("y-m-d H:i:s")
-        ]);
-
+        $link = $this->societyService->generateLinkForSocietyId($societyID);
         return $this->container->get("view")->render($response, "event/inviteLink.view.php", [
-            "link" => $uuid,
-            "society" => $society['name'],
+            "link" => $link->getUri(),
+            "society" => $link->getSociety()->getName(),
             "societyID" => $societyID
         ]);
     }

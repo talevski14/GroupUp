@@ -1,11 +1,11 @@
 <?php
 
-namespace services\implementation;
+namespace Services\implementation;
 
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
-use models\User;
-use services\UserService;
+use Models\User;
+use Services\UserService;
 
 class UserServiceImpl implements UserService
 {
@@ -19,7 +19,7 @@ class UserServiceImpl implements UserService
         $this->entityManager = $entityManager;
     }
 
-    public function getUserByUsername(string $username): User
+    public function getUserByUsername(string $username): ?User
     {
         return $this->entityManager->getRepository(User::class)->findUserByUsername($username);
     }

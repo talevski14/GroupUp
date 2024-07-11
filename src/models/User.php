@@ -1,13 +1,14 @@
 <?php
 
-namespace models;
+namespace Models;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 
 use Doctrine\ORM\Mapping as ORM;
+use Repositories\UserRepository;
 
-#[ORM\Entity(repositoryClass:"\src\repositories\UserRepository")]
+#[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: 'users')]
 class User
 {
@@ -42,7 +43,7 @@ class User
     private Collection $eventsCreated;
 
     /** @var Collection<int, User> */
-    #[ORM\ManyToMany(targetEntity: Society::class, mappedBy: 'members')]
+    #[ORM\ManyToMany(targetEntity: Society::class, inversedBy: 'members')]
     #[ORM\JoinTable(name: "members")]
     private Collection $societies;
 
@@ -184,11 +185,16 @@ class User
 
     /**
      * @param Event $event
+     * @return User
      */
-    public function attendEvent(Event $event): void
+    public function attendEvent(Event $event): User
     {
-        $this->eventsAttended->add($event);
-        $event->addAttendee($this);
+        if (!$this->eventsAttended->contains($event)) {
+            $this->eventsAttended->add($event);
+            $event->addAttendee($this);
+        }
+
+        return $this;
     }
 
     /**
@@ -209,10 +215,16 @@ class User
 
     /**
      * @param Society $society
+     * @return User
      */
-    public function enterSociety(Society $society): void
+    public function enterSociety(Society $society): User
     {
-        $this->societies->add($society);
+        if(!$this->societies->contains($society)) {
+            $this->societies->add($society);
+            $society->addMember($this);
+        }
+
+        return $this;
     }
 
     /**
@@ -223,9 +235,14 @@ class User
         return $this->societies;
     }
 
-    public function leaveSociety(Society $society) : void
+    public function leaveSociety(Society $society) : User
     {
-        $this->getSocieties()->remove($society);
+        if($this->societies->contains($society)) {
+            $this->societies->remove($society);
+            $society->removeMember($this);
+        }
+
+        return $this;
     }
 
 }

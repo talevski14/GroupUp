@@ -4,8 +4,16 @@ namespace Controllers;
 
 use DI\Container;
 use Knlv\Slim\Views\TwigMessages;
-use services\SocietyService;
-use services\UserService;
+use Models\Event;
+use Models\Link;
+use Services\CommentService;
+use Services\EventService;
+use Services\implementation\EventServiceImpl;
+use Services\implementation\SocietyServiceImpl;
+use Services\implementation\UserServiceImpl;
+use Services\LinkService;
+use Services\SocietyService;
+use Services\UserService;
 use Slim\Flash\Messages;
 
 class Controller
@@ -13,10 +21,16 @@ class Controller
     protected Container $container;
     protected UserService $userService;
     protected SocietyService $societyService;
+    protected LinkService $linkService;
+    protected EventService $eventService;
+    protected CommentService $commentService;
     public function __construct($container)
     {
         $this->container = $container;
-        $this->userService = $this->container->get(UserService::class);
-        $this->societyService = $this->container->get(SocietyService::class);
+        $this->userService = $container->get('userService');
+        $this->societyService = $container->get('societyService');
+        $this->linkService = $container->get('linkService');
+        $this->eventService = $container->get('eventService');
+        $this->commentService = $container->get('commentService');
     }
 }

@@ -1,10 +1,11 @@
 <?php
 
-namespace repositories;
+namespace Repositories;
 
 use Doctrine\ORM\EntityRepository;
-use models\Society;
-use models\User;
+use Models\Link;
+use Models\Society;
+use Models\User;
 
 class SocietyRepository extends EntityRepository
 {
@@ -23,5 +24,15 @@ class SocietyRepository extends EntityRepository
 
         $entityManager->remove($society);
         $entityManager->flush();
+    }
+
+    public function findSocietyByLink(Link $link) : Society
+    {
+        $qb = $this->createQueryBuilder('s')
+            ->innerJoin('s.links', 'l')
+            ->where('l = :link')
+            ->setParameter('link', $link);
+
+        return $qb->getQuery()->getResult();
     }
 }

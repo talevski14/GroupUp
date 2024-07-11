@@ -1,11 +1,14 @@
 <?php
 
-namespace services\implementation;
+namespace Services\implementation;
 
+use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
-use models\Society;
-use models\User;
-use services\SocietyService;
+use Models\Event;
+use Models\Link;
+use Models\Society;
+use Models\User;
+use Services\SocietyService;
 
 class SocietyServiceImpl implements SocietyService
 {
@@ -53,6 +56,51 @@ class SocietyServiceImpl implements SocietyService
             $this->entityManager->getRepository(Society::class)->removeSociety($society);
         }
 
-        // TODO delete events created by user
+        $eventsBySociety = $this->entityManager->getRepository(Event::class)->findEventsBySociety($society);
+        $eventsByMember = $this->entityManager->getRepository(Event::class)->findEventsByMember($user);
+
+        foreach ($eventsByMember as $event) {
+            if($eventsBySociety->contains($event)){
+                $this->entityManager->getRepository(Event::class)->deleteEvent($event);
+            }
+        }
+    }
+
+    public function enterSocietyByUri(string $username, string $uri) : void
+    {
+        $user = $this->entityManager->getRepository(User::class)->findUserByUsername($username);
+
+        $link = $this->entityManager->getRepository(Link::class)->findLinkByUri($uri);
+        $society = $this->entityManager->getRepository(Society::class)->findSocietyByLink($link);
+
+        $user->enterSociety($society);
+    }
+
+    public function findSocietyByUri($uri) : ?Society {
+        $link = $this->entityManager->getRepository(Link::class)->findLinkByUri($uri);
+        $society = $this->entityManager->getRepository(Society::class)->findSocietyByLink($link);
+        return $society;
+    }
+
+    public function generateLinkForSocietyId($societyId): ?Link
+    {
+        $society = $this->entityManager->getRepository(Society::class)->find($societyId);
+        $link = $this->entityManager->getRepository(Link::class)->getLinkBySociety($society);
+        require __DIR__ . "/../../core/functions.php";
+        $now = new DateTime();
+
+        if($link === null || $link->getDateExpires() < $now) {
+            if($link !== null) {
+                $this->entityManager->getRepository(Link::class)->removeLink($link);
+            }
+            $newUri = guidv4();
+            $newLink = new Link();
+            $newLink->setDateCreated();
+            $newLink->setUri($newUri);
+            $newLink->setSociety($society);
+        } else {
+            $newLink = $link;
+        }
+        return $newLink;
     }
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace models;
+namespace Models;
 
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\Collection;

@@ -1,13 +1,14 @@
 <?php
 
-namespace models;
+namespace Models;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 
 use Doctrine\ORM\Mapping as ORM;
+use Repositories\SocietyRepository;
 
-#[ORM\Entity (repositoryClass: "\src\repositories\SocietyRepository")]
+#[ORM\Entity (repositoryClass: SocietyRepository::class)]
 #[ORM\Table(name: 'societies')]
 class Society
 {
@@ -31,7 +32,7 @@ class Society
     private Collection $events;
 
     /** @var Collection<int, User> */
-    #[ORM\ManyToMany(targetEntity: User::class, inversedBy: "society")]
+    #[ORM\ManyToMany(targetEntity: User::class, mappedBy: "society")]
     private Collection $members;
 
     public function __construct()
@@ -139,16 +140,25 @@ class Society
 
     /**
      * @param User $member
+     * @return Society
      */
-    public function addMember(User $member): void
+    public function addMember(User $member): Society
     {
-        $this->members->add($member);
-        $member->enterSociety($this);
+        if (!$this->members->contains($member)) {
+            $this->members->add($member);
+            $member->enterSociety($this);
+        }
+
+        return $this;
     }
 
-    public function removeMember(User $member) :void
+    public function removeMember(User $member) : Society
     {
-        $this->members->remove($member);
-        $member->leaveSociety($this);
+        if($this->members->contains($member)) {
+            $this->members->add($member);
+            $member->leaveSociety($this);
+        }
+
+        return $this;
     }
 }
