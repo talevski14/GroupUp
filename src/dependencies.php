@@ -25,7 +25,7 @@ $container->set('view', function() {
 });
 
 $container->set('config', function() {
-    return require __DIR__ . "/../src/config.php";
+    return require __DIR__ . "/../config/config.php";
 });
 
 $container->set('db', function() use ($container) {

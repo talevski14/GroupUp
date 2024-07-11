@@ -22,9 +22,9 @@ class User
     private string $name;
     #[ORM\Column(type: 'string', length: 50)]
     private string $email;
-    #[ORM\Column(type: 'string', length: 50)]
+    #[ORM\Column(type: 'string', length: 1000)]
     private string $password;
-    #[ORM\Column(type: 'string', length: 100, nullable: true, options: ["default"=>"/images/account/default.jpg"])]
+    #[ORM\Column(type: 'string', length: 1000, nullable: true, options: ["default"=>"/images/account/default.jpg"])]
     private string $profilePicture;
     #[ORM\Column(type: 'boolean', nullable: true, options: ["default"=>true])]
     private bool $active;
@@ -53,6 +53,8 @@ class User
         $this->eventsAttended = new ArrayCollection();
         $this->eventsCreated = new ArrayCollection();
         $this->societies = new ArrayCollection();
+        $this->profilePicture = "/images/account/default.jpg";
+        $this->active = true;
     }
 
     /**

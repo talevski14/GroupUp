@@ -27,7 +27,7 @@ class DashboardController extends Controller
         if(isset($messages['activate'])) {
             $activationMessage = $messages['activate'];
         }
-        $username = $_SESSION['user']['username'];
+        $username = $_SESSION['user']->getUsername();
 
         $userDb = $this->userService->getUserByUsername($username);
 
@@ -37,7 +37,7 @@ class DashboardController extends Controller
             "profileimg" => $userDb->getProfilePicture(),
             "header" => "Societies",
             "societies" => $societies,
-            "username" => $_SESSION['user']['username'],
+            "username" => $_SESSION['user']->getUsername(),
             "activationMessage" => $activationMessage
         ]);
     }
@@ -51,7 +51,7 @@ class DashboardController extends Controller
     {
         $database = $this->container->get("db");
 
-        $username = $_SESSION['user']['username'];
+        $username = $_SESSION['user']->getUsername();
 
         $userDb = $this->userService->getUserByUsername($username);
 
@@ -71,7 +71,7 @@ class DashboardController extends Controller
         $data = $request->getParsedBody();
         $database = $this->container->get("db");
 
-        $username = $_SESSION["user"]["username"];
+        $username = $_SESSION["user"]->getUsername();
 
         $description = $data["description"];
 
@@ -105,7 +105,7 @@ class DashboardController extends Controller
     public function leave(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
         $societyId = $args['id'];
-        $userId = $_SESSION['user']['id'];
+        $userId = $_SESSION['user']->getUserId();
         $this->societyService->leaveSociety($userId, $societyId);
 
         header("location: /home");
@@ -122,7 +122,7 @@ class DashboardController extends Controller
 
             $isValid = $this->linkService->checkIfValid($id);
 
-            $username = $_SESSION['user']['username'];
+            $username = $_SESSION['user']->getUsername();
             $society = $this->societyService->findSocietyByUri($id);
 
             if (!$isValid) {

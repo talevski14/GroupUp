@@ -7,7 +7,7 @@ use Rakit\Validation\Rules\Boolean;
 
 interface LinkService
 {
-    public function checkIfValid($uri) : Boolean;
+    public function checkIfValid($uri) : bool;
 
     public function removeLink($link): void;
 

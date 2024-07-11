@@ -3,6 +3,8 @@
 namespace Controllers;
 
 use DI\Container;
+use exceptions\EmailAlreadyExists;
+use exceptions\UsernameAlreadyExists;
 use GuzzleHttp\Client;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -69,18 +71,7 @@ class HomeController extends Controller
     {
         $data = $request->getParsedBody();
 
-        $validator = new Validator;
-
-        $database = $this->container->get("db");
-
-        $validation = $validator->make($data, [
-            'name' => 'required',
-            'email' => 'required|email',
-            'password' => 'required|min:6',
-            'username' => 'required|min:6'
-        ]);
-
-        $validation->validate();
+        $validation = $this->userService->validateUserData($data);
 
         if ($validation->fails()) {
             $errors = $validation->errors();
@@ -92,43 +83,20 @@ class HomeController extends Controller
                 'username' => $errors->get("username")
             ]);
         } else {
-            $username = $data['username'];
-
-            $userDb = $database->query("select * from users where username = :username", [
-                ':username' => $username
-            ])->find();
-
-            if ($userDb) {
+            try {
+                $user = $this->userService->createAccount($data);
+            } catch (UsernameAlreadyExists $exception) {
                 return $this->container->get("view")->render($response, "account/create.view.php", [
                     'error' => "This username already exists!"
                 ]);
-            }
-
-            $email = $data['email'];
-
-            $userDb = $database->query("select * from users where email = :email", [
-                ':email' => $email
-            ])->find();
-
-            if ($userDb) {
+            } catch (EmailAlreadyExists $exception) {
                 return $this->container->get("view")->render($response, "account/create.view.php", [
                     'error' => "There is an account registered on this email."
                 ]);
             }
 
-            $database->query("insert into users(name,email,username,password) values(:name, :email, :username, :password)", [
-                ':name' => $data['name'],
-                ':email' => $data['email'],
-                ':username' => $data['username'],
-                ':password' => password_hash($data['password'], PASSWORD_BCRYPT)
-            ]);
-
-            $userDb = $database->query("select * from users where email = :email", [
-                ':email' => $email
-            ])->find();
-
             require __DIR__ . "/../core/functions.php";
-            login($userDb);
+            login($user);
 
             header("location: /photo");
         }
@@ -150,25 +118,14 @@ class HomeController extends Controller
 
             $file = $files['uploadfile'];
 
-            $username = $_SESSION["user"]["username"];
+            $username = $_SESSION["user"]->getUsername();
 
-            $user = $database->query("select * from users where username = :username", [
-                ':username' => $username
-            ])->find();
-
-            $folder =__DIR__ . "/../../public/images/account/" . $user['id'] . ".jpg";
-
-            $database->query("update users set profpic = :image where username = :username", [
-                ":image" => "/images/account/" . $user['id'] . ".jpg",
-                ":username" => $username
-            ]);
-
-            $userDb = $database->query("select * from users where username = :username", [
-                ':username' => $username
-            ])->find();
+            $folder = $this->userService->uploadPhoto($username);
 
             require __DIR__ . "/../core/functions.php";
-            login($userDb);
+
+            $user = $this->userService->getUserByUsername($username);
+            login($user);
 
             $file->moveTo($folder);
         }
