@@ -103,4 +103,21 @@ class SocietyServiceImpl implements SocietyService
         }
         return $newLink;
     }
+
+    public function getMembersDisplay($societyId) : array
+    {
+        $society = $this->getSociety($societyId);
+
+        $membersObj = $society->getMembers();
+        $members = [];
+        foreach ($membersObj as $member) {
+            $memberDisplay = [
+                'name' => $member->getName(),
+                'username' => $member->getUsername(),
+                'photo' => $member->getProfilePicture()
+            ];
+            $members[] = $memberDisplay;
+        }
+        return $members;
+    }
 }

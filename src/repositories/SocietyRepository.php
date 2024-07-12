@@ -26,7 +26,7 @@ class SocietyRepository extends EntityRepository
         $entityManager->flush();
     }
 
-    public function findSocietyByLink(Link $link) : Society
+    public function findSocietyByLink(Link $link) : ?Society
     {
         $qb = $this->createQueryBuilder('s')
             ->innerJoin('s.links', 'l')

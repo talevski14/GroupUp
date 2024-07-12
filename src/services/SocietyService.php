@@ -15,4 +15,6 @@ interface SocietyService
     public function enterSocietyByUri(string $username, string $uri);
     public function findSocietyByUri($uri) : ?Society;
     public function generateLinkForSocietyId($societyId) : ?Link;
+
+    public function getMembersDisplay($societyId): array;
 }

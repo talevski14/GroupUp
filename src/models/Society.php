@@ -40,6 +40,7 @@ class Society
         $this->links = new ArrayCollection();
         $this->events = new ArrayCollection();
         $this->members = new ArrayCollection();
+        $this->banner = "/images/society/banner.jpg";
     }
 
     /**

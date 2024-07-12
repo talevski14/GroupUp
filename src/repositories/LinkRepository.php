@@ -7,7 +7,7 @@ use Models\Link;
 
 class LinkRepository extends EntityRepository
 {
-    public function findLinkByUri(string $uri) : Link
+    public function findLinkByUri(string $uri) : ?Link
     {
         return $this->findOneBy(["uri" => $uri]);
     }
@@ -20,7 +20,7 @@ class LinkRepository extends EntityRepository
         $entityManager->flush();
     }
 
-    public function getLinkBySociety($society) : Link
+    public function getLinkBySociety($society) : ?Link
     {
         return $this->findOneBy(["society" => $society]);
     }
