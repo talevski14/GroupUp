@@ -23,7 +23,8 @@
       "App\\Error\\Renderer\\" : "./src/Error/Renderer",
       "Services\\": "./src/services",
       "Models\\": "./src/models",
-      "Repositories\\": "./src/repositories"
+      "Repositories\\": "./src/repositories",
+      "Exceptions\\": "./src/exceptions"
     }
   }
 }

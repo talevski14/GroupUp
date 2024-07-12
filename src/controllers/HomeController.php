@@ -2,16 +2,13 @@
 
 namespace Controllers;
 
-use DI\Container;
 use exceptions\EmailAlreadyExists;
 use exceptions\UsernameAlreadyExists;
-use GuzzleHttp\Client;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
-use Rakit\Validation\Validator;
 
 class HomeController extends Controller
 {

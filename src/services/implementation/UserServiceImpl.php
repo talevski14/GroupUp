@@ -2,7 +2,6 @@
 
 namespace Services\implementation;
 
-use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use exceptions\EmailAlreadyExists;
 use exceptions\NewPasswordSameAsOldException;
@@ -61,7 +60,7 @@ class UserServiceImpl implements UserService
         $user->setName($name);
         $user->setEmail($email);
         $user->setUsername($username);
-        $user->setPasswordHash(password_hash($password, PASSWORD_BCRYPT));
+        $user->setPasswordHash($password);
 
         $this->entityManager->getRepository(User::class)->saveUser($user);
 
@@ -206,7 +205,7 @@ class UserServiceImpl implements UserService
             throw new NewPasswordSameAsOldException();
         }
 
-        $user->setPasswordHash(password_hash($newPass, PASSWORD_BCRYPT));
+        $user->setPasswordHash($newPass);
         $this->entityManager->getRepository(User::class)->saveUser($user);
     }
 }

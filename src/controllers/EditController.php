@@ -8,7 +8,6 @@ use exceptions\WrongPasswordException;
 use exceptions\WrongRepeatedPasswordException;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use Rakit\Validation\Validator;
 
 class EditController extends Controller
 {
