@@ -11,7 +11,6 @@ class GuestMiddleware
             header("location: /home");
         }
 
-        $response = $handler->handle($request);
-        return $response;
+        return $handler->handle($request);
     }
 }

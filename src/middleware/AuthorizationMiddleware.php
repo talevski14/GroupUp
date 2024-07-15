@@ -16,25 +16,22 @@ class AuthorizationMiddleware
 
     public function __invoke($request, $handler)
     {
-        $database = $this->container->get("db");
-        $currentUser = $_SESSION['user']['id'];
+        $currentUser = $_SESSION['user']->getUsername();
 
         $uri = $_SERVER['REQUEST_URI'];
         $uri = explode('/', $uri);
         $societyID = explode("?", $uri[2])[0];
 
 
-        $user = $database->query("select * from users where id = :id", [
-            ":id" => $currentUser
-        ])->find();
+        $userService = $this->container->get("userService");
+        $societyService = $this->container->get("societyService");
+        $user = $userService->getUserByUsername($currentUser);
+        $society = $societyService->getSociety($societyID);
 
-        $societies = $user['societies'];
-        if(isset($societies))
+        $societies = $user->getSocieties();
+        if(!$societies->isEmpty())
         {
-            $societies = explode(";", $societies);
-            array_shift($societies);
-
-            if (in_array($societyID, $societies)) {
+            if ($societies->contains($society)) {
                 return $handler->handle($request);
             }
         }

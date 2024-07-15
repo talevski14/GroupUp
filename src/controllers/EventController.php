@@ -28,191 +28,53 @@ class EventController extends Controller
 
         $passedPage = isset($_GET['passed']) && $_GET['passed'] === 'true';
 
-        $id = $args['id'];
-        $database = $this->container->get("db");
-        $society = $database->query("select * from societies where id = :id", [
-            ':id' => $id
-        ])->find();
-
-        $membersUsernames = explode(';', $society['members']);
-        array_shift($membersUsernames);
-        $members = [];
-        foreach ($membersUsernames as $member) {
-            $memberFull = $database->query("select * from users where username = :username", [
-                ':username' => $member
-            ])->find();
-
-            $memberDisplay = [
-                'name' => $memberFull['name'],
-                'username' => $memberFull['username'],
-                'photo' => $memberFull['profpic']
-            ];
-            $members[] = $memberDisplay;
-        }
-
+        $id = (int)$args['id'];
+        $members = $this->societyService->getMembersDisplay($id);
         $events = [];
-        $eventIDs = [];
+        $eventIDs = "";
         $eventsPassed = [];
-        $eventIDsPassed = [];
+        $eventIDsPassed = "";
 
-        if (isset($society['events'])) {
-            $eventsId = explode(";", $society['events']);
-            array_shift($eventsId);
-            foreach ($eventsId as $event) {
-                $eventDB = $database->query("select * from events where id = :id", [
-                    ':id' => $event
-                ])->find();
-                if (strtotime($eventDB["date_and_time"]) < strtotime("now")) {
-                    $database->query("update events set passed = 1 where id = :id", [
-                        ":id" => $event
-                    ]);
-                }
-                $eventDB = $database->query("select * from events where id = :id", [
-                    ':id' => $event
-                ])->find();
+        $eventsObj = $this->eventService->getEventsForSociety($id);
 
-
-                $attending = [];
-                $attendBool = false;
-                if (isset($eventDB['attending'])) {
-                    $attendingId = explode(';', $eventDB['attending']);
-                    array_shift($attendingId);
-
-                    $attendBool = in_array($_SESSION['user']['id'], $attendingId);
-                    foreach ($attendingId as $attend) {
-                        $user = $database->query("select * from users where id = :id", [
-                            ':id' => $attend
-                        ])->find();
-
-                        $userDisplay = [
-                            'name' => $user['name'],
-                            'username' => $user['username'],
-                            'photo' => $user['profpic']
-                        ];
-                        $attending[] = $userDisplay;
-                    }
-                }
-
-                $comments = [];
-                if (isset($eventDB['discussion'])) {
-                    $commentsId = explode(';', $eventDB['discussion']);
-                    array_shift($commentsId);
-                    foreach ($commentsId as $commentId) {
-                        $comment = $database->query("select * from comments where id = :id", [
-                            ':id' => $commentId
-                        ])->find();
-
-                        $user = $database->query("select * from users where id = :id", [
-                            ':id' => $comment['user_id']
-                        ])->find();
-
-                        $comments[] = [
-                            'photo' => $user['profpic'],
-                            'username' => $user['username'],
-                            'body' => $comment['body']
-                        ];
-                    }
-                }
-
-                $creatorId = $eventDB['creator'];
-                $creatorFull = $database->query("select * from users where id = :id", [
-                    ":id" => $creatorId
-                ])->find();
-
-                $creator = [
-                    'photo' => $creatorFull['profpic'],
-                    'name' => $creatorFull['name']
-                ];
-
-                $editable = $creatorId == $_SESSION['user']['id'];
-
-                $createdOnArr = explode(' ', $eventDB['created_on']);
-                $dateArr = explode('-', $createdOnArr[0]);
-                $timeArr = explode(':', $createdOnArr[1]);
-                $date = $dateArr[2] . "." . $dateArr[1] . "." . $dateArr[0];
-                $time = $timeArr[0] . ":" . $timeArr[1];
-                $createdOn = $date . " " . $time;
-
-                $dateTimeArr = explode(' ', $eventDB['date_and_time']);
-                $dateArr = explode('-', $dateTimeArr[0]);
-                $timeArr = explode(':', $dateTimeArr[1]);
-                $date = $dateArr[2] . "." . $dateArr[1] . "." . $dateArr[0];
-                $time = "$timeArr[0]" . ":" . "$timeArr[1]";
-                $weatherDate = $dateTimeArr[0] . "T" . $timeArr[0] . ":00";
-
+        if (!$eventsObj->isEmpty()) {
+            foreach ($eventsObj as $event) {
+                $weatherDate = $this->eventService->getWeatherEvent($event);
                 $weatherAPI = $this->container->get("weather");
-                $weather = $weatherAPI->getWeather($weatherDate, $eventDB['lat'], $eventDB['lon']);
-
-                if($passedPage && $eventDB['passed'] === 1){
-                    $eventsPassed[] = [
-                        "id" => $eventDB['id'],
-                        "name" => $eventDB['name'],
-                        "creator" => $creator,
-                        "date" => $date,
-                        "time" => $time,
-                        "description" => $eventDB['description'],
-                        "attending" => $attending,
-                        "comments" => $comments,
-                        "creation" => $createdOn,
-                        "location" => $eventDB['location'],
-                        "lat" => $eventDB['lat'],
-                        "lon" => $eventDB['lon'],
-                        "weather" => $weather,
-                        "attendBool" => $attendBool,
-                        "passed" => $eventDB['passed']
-                    ];
-
-                    $eventIDsPassed[] = $eventDB['id'];
-                } elseif(!$passedPage && $eventDB['passed'] === 0) {
-                    $events[] = [
-                        "id" => $eventDB['id'],
-                        "name" => $eventDB['name'],
-                        "creator" => $creator,
-                        "date" => $date,
-                        "time" => $time,
-                        "description" => $eventDB['description'],
-                        "attending" => $attending,
-                        "comments" => $comments,
-                        "creation" => $createdOn,
-                        "location" => $eventDB['location'],
-                        "lat" => $eventDB['lat'],
-                        "lon" => $eventDB['lon'],
-                        "weather" => $weather,
-                        "attendBool" => $attendBool,
-                        "passed" => $eventDB['passed'],
-                        "editable" => $editable
-                    ];
-
-                    $eventIDs[] = $eventDB['id'];
+                $weather = $weatherAPI->getWeather($weatherDate, $event->getLat(), $event->getLon());
+                if($passedPage && $event->isPassed()){
+                    $eventsPassed[] = $this->eventService->getPassedEventsForSocietyDisplay($id, $weather);
+                    $eventIDsPassed = $eventIDsPassed . $event->getId() . " ";
+                } elseif(!$passedPage && !$event->isPassed()) {
+                    $events[] = $this->eventService->getOnGoingEventsForSocietyDisplay($id, $weather);
+                    $eventIDs = $eventIDs . $event->getId() . " ";
                 }
             }
         }
-        $eventIDs = implode(" ", $eventIDs);
-        $eventIDsPassed = implode(" ", $eventIDsPassed);
 
         if($passedPage){
             return $this->container->get('view')->render($response, '/event/index.view.php', [
-                "society" => $society,
+                "society" => $this->societyService->getSociety($id),
                 "members" => $members,
                 "events" => $eventsPassed,
                 "eventIDs" => $eventIDsPassed,
-                "profileimg" => $_SESSION['user']['profpic'],
+                "profileimg" => $_SESSION['user']->getProfilePicture(),
                 "header" => "Past Events",
                 "passed" => $passedPage,
-                "username" =>$_SESSION['user']['username'],
+                "username" =>$_SESSION['user']->getUsername(),
                 "welcomeMessage" => $welcomeMessage
             ]);
         }
 
         return $this->container->get('view')->render($response, '/event/index.view.php', [
-            "society" => $society,
+            "society" => $this->societyService->getSociety($id),
             "members" => $members,
             "events" => $events,
             "eventIDs" => $eventIDs,
-            "profileimg" => $_SESSION['user']['profpic'],
+            "profileimg" => $_SESSION['user']->getProfilePicture(),
             "header" => "On-going events",
             "passsed" => $passedPage,
-            "username" =>$_SESSION['user']['username'],
+            "username" =>$_SESSION['user']->getUsername(),
             "welcomeMessage" => $welcomeMessage
         ]);
     }
@@ -220,24 +82,20 @@ class EventController extends Controller
     public function create(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
         $id = $args['id'];
-        $database = $this->container->get("db");
 
-        $username = $_SESSION['user']['username'];
-
-        $userDb = $database->query("select * from users where username = :username", [
-            ':username' => $username
-        ])->find();
+        $username = $_SESSION['user']->getUsername();
+        $user = $this->userService->getUserByUsername($username);
 
         $date = date('y-m-d h:i');
         $dateArr = explode(' ', $date);
         $date = $dateArr[0] . ' ' . $dateArr[1];
 
         return $this->container->get("view")->render($response, "event/create.view.php", [
-                "profileimg" => $userDb["profpic"],
+                "profileimg" => $user->getProfilePicture(),
                 "id" => $id,
                 "currentTime" => $date,
                 "header" => "Create an event",
-                "username" =>$_SESSION['user']['username']
+                "username" =>$_SESSION['user']->getUsername()
             ]
         );
     }
@@ -246,66 +104,22 @@ class EventController extends Controller
     {
         $data = $request->getParsedBody();
 
-        $validator = new Validator;
-
-        $validation = $validator->make($data, [
-            'name' => 'required|max:15',
-            'event-time' => 'required',
-            'description' => 'required',
-            '_lat' => 'required',
-            '_lon' => 'required'
-        ]);
-
-        $validation->setMessages([
-            'required' => 'This field is required.',
-            'max' => 'Characters maximum is 15.'
-        ]);
-
-        $validation->validate();
+        $validation = $this->eventService->validateEvent($data);
 
         if ($validation->fails()) {
             $errors = $validation->errors();
             return $this->container->get("view")->render($response, "event/create.view.php", [
-                'profileimg' => $_SESSION["user"]["profpic"],
+                'profileimg' => $_SESSION["user"]->getProfilePicture(),
                 'name' => $errors->get("name"),
                 'event-time' => $errors->get("event-time"),
                 'description' => $errors->get("description"),
                 'lat' => $errors->get("_lat"),
                 'lon' => $errors->get("_lon"),
-                "username" =>$_SESSION['user']['username']
+                "username" =>$_SESSION['user']->getUsername()
             ]);
         }
 
-        $database = $this->container->get("db");
-        date_default_timezone_set("Europe/Skopje");
-        $date = date('y-m-d H:i:s');
-        $database->query("insert into events(name,society,attending,date_and_time,creator,description,created_on, lat, lon, location) values(:name,:society,:attending,:date_and_time,:creator,:description,:created_on, :lat, :lon, :location)", [
-            ":name" => $data['name'],
-            ":society" => $args['id'],
-            ":attending" => ";" . $_SESSION['user']['id'],
-            ":date_and_time" => $data['event-time'],
-            ":creator" => $_SESSION['user']['id'],
-            ":description" => $data['description'],
-            ":created_on" => $date,
-            ":lat" => $data['_lat'],
-            ":lon" => $data['_lon'],
-            ":location" => $data['_location']
-        ]);
-
-        $eventId = $database->getConnection()->lastInsertId();
-
-        $society = $database->query("select * from societies where id = :id", [
-            ":id" => $args['id']
-        ])->find()['events'];
-
-        $previousEvents = $society === null ? "" : $society;
-
-        $previousEvents = $previousEvents . ";" . $eventId;
-
-        $database->query("update societies set events = :events where id = :id", [
-            ":events" => $previousEvents,
-            ":id" => $args['id']
-        ]);
+        $eventId = $this->eventService->addEvent($data, $_SESSION["user"]->getUserId(), $args["id"]);
 
         header("location: /society/" . $args['id']);
         return $response;
@@ -315,31 +129,8 @@ class EventController extends Controller
     {
         $data = $request->getParsedBody();
 
-        $userId = $_SESSION['user']['id'];
-        $body = $data['body'];
-
-        $database = $this->container->get("db");
-        $database->query("insert into comments(user_id, body) values (:user_id, :body)", [
-            ":user_id" => $userId,
-            ":body" => $body
-        ]);
-
-        $commentId = $database->getConnection()->lastInsertId();
-        $eventId = $data['_id'];
-
-        $event = $database->query("select * from events where id = :id", [
-            ":id" => $eventId
-        ])->find();
-
-        $discussion = $event['discussion'];
-        $societyId = $event['society'];
-
-        $discussion = $discussion . ";" . $commentId;
-
-        $database->query("update events set discussion = :discussion where id = :id", [
-            ":discussion" => $discussion,
-            ":id" => $eventId
-        ]);
+        $userId = $_SESSION['user']->getUserId();
+        $societyId = $this->commentService->addComment($data, $userId);
 
         header("location: /society/" . $societyId);
         return $response;
@@ -348,34 +139,14 @@ class EventController extends Controller
     public function response(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
         $data = $request->getParsedBody();
-        $eventID = $data['event'];
-        $userID = $_SESSION['user']['id'];
-        $db = $this->container->get("db");
-        $event = $db->query("select * from events where id = :id", [
-            ":id" => $eventID
-        ])->find();
+        $eventID = (int)$data['event'];
+        $userID = (int)$_SESSION['user']->getUserId();
 
-        $oldResponse = $event['attending'];
+        $_response = $data['_response'];
 
-        if ($data['_response'] === "true") {
-            $newResponse = isset($oldResponse) ? $oldResponse . ";" . $userID : ";" . $userID;
-        } else {
-            $responses = explode(";", $oldResponse);
-            array_shift($responses);
-            $newResponse = '';
-            foreach ($responses as $response) {
-                if ($response != $_SESSION['user']['id']) {
-                    $newResponse = $newResponse . ';' . $response;
-                }
-            }
-        }
+        $societyId = $this->eventService->attendEvent($userID, $eventID, $_response);
 
-        $db->query("update events set attending = :attending where id = :id", [
-            ":attending" => $newResponse,
-            ":id" => $eventID
-        ]);
-
-        header("location: /society/" . $event['society']);
+        header("location: /society/" . $societyId);
         return $response;
     }
 
@@ -383,49 +154,7 @@ class EventController extends Controller
     {
         $data = $request->getParsedBody();
         $eventID = $data['_eventIDDelete'];
-
-        $database = $this->container->get("db");
-
-        $comments = $database->query("select * from events where id = :id", [
-            ":id" => $eventID
-        ])->find()['discussion'];
-
-        if(isset($comments)){
-            $comments = explode(";", $comments);
-            array_shift($comments);
-
-            foreach ($comments as $comment) {
-                $database->query("delete from comments where id = :id", [
-                    ":id" => $comment
-                ]);
-            }
-        }
-
-        $database->query("delete from events where id = :id", [
-            ":id" => $eventID
-        ]);
-
-        $societyID = $data['_societyIDDelete'];
-        $society = $database->query("select * from societies where id = :id", [
-            ":id" => $societyID
-        ])->find();
-
-        $events = $society['events'];
-        $events = explode(";", $events);
-        array_shift($events);
-
-        $newEvents = "";
-        foreach ($events as $event) {
-            if($event != $eventID)
-            {
-                $newEvents = $newEvents . ";" . $event;
-            }
-        }
-
-        $database->query("update societies set events = :events where id = :id", [
-            ":events" => $newEvents,
-            ":id" => $societyID
-        ]);
+        $societyID = $this->eventService->deleteEvent($eventID);
 
         header("location: /society/" . $societyID);
         return $response;
@@ -434,30 +163,25 @@ class EventController extends Controller
     public function edit(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
         $id = $args['idEvent'];
-        $database = $this->container->get("db");
 
-        $username = $_SESSION['user']['username'];
+        $username = $_SESSION['user']->getUsername();
 
-        $userDb = $database->query("select * from users where username = :username", [
-            ':username' => $username
-        ])->find();
+        $user = $this->userService->getUserByUsername($username);
 
         date_default_timezone_set("Europe/Skopje");
         $date = date('y-m-d h:i');
         $dateArr = explode(' ', $date);
         $date = $dateArr[0] . ' ' . $dateArr[1];
 
-        $data = $database->query("select * from events where id = :id", [
-            ":id" => $id
-            ])->find();
+        $data = $this->eventService->getEventByIdForDisplay($id);
 
         return $this->container->get("view")->render($response, "event/edit.view.php", [
-                "profileimg" => $userDb["profpic"],
+                "profileimg" => $user->getProfilePicture(),
                 "filled" => $data,
                 "id" => $id,
                 "currentTime" => $date,
                 "header" => "Edit event",
-                "username" =>$_SESSION['user']['username']
+                "username" =>$username
             ]
         );
     }
@@ -466,54 +190,24 @@ class EventController extends Controller
     {
         $data = $request->getParsedBody();
 
-        $validator = new Validator;
-
-        $validation = $validator->make($data, [
-            'name' => 'required|max:15',
-            'event-time' => 'required',
-            'description' => 'required',
-            '_lat' => 'required',
-            '_lon' => 'required'
-        ]);
-
-        $validation->setMessages([
-            'required' => 'This field is required.',
-            'max' => 'Characters maximum is 15.'
-        ]);
-
-        $validation->validate();
+        $validation = $this->eventService->validateEvent($data);
 
         if ($validation->fails()) {
             $errors = $validation->errors();
             return $this->container->get("view")->render($response, "event/edit.view.php", [
                 'filled' => $data,
-                'profileimg' => $_SESSION["user"]["profpic"],
+                'profileimg' => $_SESSION["user"]->getProfilePicture(),
                 'name' => $errors->get("name"),
                 'event-time' => $errors->get("event-time"),
                 'description' => $errors->get("description"),
                 'lat' => $errors->get("_lat"),
                 'lon' => $errors->get("_lon"),
-                "username" =>$_SESSION['user']['username']
+                "username" =>$_SESSION['user']->getUsername()
             ]);
         }
 
-        $database = $this->container->get("db");
-        date_default_timezone_set("Europe/Skopje");
-        $database->query("update events set name = :name, date_and_time = :date_and_time, description = :description, lat = :lat, lon = :lon, location = :location where id = :id", [
-            ":name" => $data['name'],
-            ":date_and_time" => $data['event-time'],
-            ":description" => $data['description'],
-            ":lat" => $data['_lat'],
-            ":lon" => $data['_lon'],
-            ":location" => $data['_location'],
-            ":id" => $args['idEvent']
-        ]);
-
-        $society = $database->query("select * from events where id = :id", [
-            ":id" => $args['idEvent']
-        ])->find()['society'];
-
-        header("location: /society/" . $society);
+        $societyId = $this->eventService->updateEvent($data, $args['idEvent']);
+        header("location: /society/" . $societyId);
         return $response;
     }
 }

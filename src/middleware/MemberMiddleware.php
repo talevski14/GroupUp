@@ -18,7 +18,6 @@ class MemberMiddleware
             return $response;
         }
 
-        $response = $handler->handle($request);
-        return $response;
+        return $handler->handle($request);
     }
 }

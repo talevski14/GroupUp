@@ -8,6 +8,10 @@ use Core\Database;
 use Core\Weather;
 use GuzzleHttp\Client;
 use Psr\Container\ContainerInterface;
+use Services\implementation\SocietyServiceImpl;
+use Services\implementation\UserServiceImpl;
+use Services\SocietyService;
+use Services\UserService;
 use Slim\Flash\Messages;
 use Slim\Views\Twig;
 
@@ -21,7 +25,7 @@ $container->set('view', function() {
 });
 
 $container->set('config', function() {
-    return require __DIR__ . "/../src/config.php";
+    return require __DIR__ . "/../config/config.php";
 });
 
 $container->set('db', function() use ($container) {
@@ -61,6 +65,26 @@ $container->set('settings', function () {
     ];
 });
 
-$container->set('EntityManager', function () use ($container) {
+$container->set('entityManager', function () use ($container) {
     return $container->get('settings')['doctrine'];
+});
+
+$container->set('userService', function ($container) {
+    return new Services\implementation\UserServiceImpl($container->get('entityManager'));
+});
+
+$container->set('societyService', function ($container) {
+    return new Services\implementation\SocietyServiceImpl($container->get('entityManager'));
+});
+
+$container->set('linkService', function ($container) {
+    return new Services\implementation\LinkServiceImpl($container->get('entityManager'));
+});
+
+$container->set('eventService', function ($container) {
+    return new Services\implementation\EventServiceImpl($container->get('entityManager'));
+});
+
+$container->set('commentService', function ($container) {
+    return new Services\implementation\CommentServiceImpl($container->get('entityManager'));
 });

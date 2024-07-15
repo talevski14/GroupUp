@@ -1,13 +1,14 @@
 <?php
 
-namespace models;
+namespace Models;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 
 use Doctrine\ORM\Mapping as ORM;
+use Repositories\UserRepository;
 
-#[ORM\Entity]
+#[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: 'users')]
 class User
 {
@@ -21,15 +22,15 @@ class User
     private string $name;
     #[ORM\Column(type: 'string', length: 50)]
     private string $email;
-    #[ORM\Column(type: 'string', length: 50)]
+    #[ORM\Column(type: 'string', length: 1000)]
     private string $password;
-    #[ORM\Column(type: 'string', length: 100, nullable: true, options: ["default"=>"/images/account/default.jpg"])]
+    #[ORM\Column(type: 'string', length: 1000, nullable: true, options: ["default" => "/images/account/default.jpg"])]
     private string $profilePicture;
-    #[ORM\Column(type: 'boolean', nullable: true, options: ["default"=>true])]
+    #[ORM\Column(type: 'boolean', nullable: true, options: ["default" => true])]
     private bool $active;
 
     /** @var Collection<int, Comment> */
-    #[ORM\OneToMany(targetEntity: Comment::class, mappedBy: 'user')]
+    #[ORM\OneToMany(targetEntity: Comment::class, mappedBy: 'user', cascade: ['persist', 'remove'])]
     private Collection $comments;
 
     /** @var Collection<int, Event> */
@@ -38,12 +39,11 @@ class User
     private Collection $eventsAttended;
 
     /** @var Collection<int, Event> */
-    #[ORM\OneToMany(targetEntity: Event::class, mappedBy: 'creator')]
+    #[ORM\OneToMany(targetEntity: Event::class, mappedBy: 'creator', cascade: ['persist', 'remove'])]
     private Collection $eventsCreated;
 
     /** @var Collection<int, User> */
-    #[ORM\ManyToMany(targetEntity: Society::class, inversedBy: 'members')]
-    #[ORM\JoinTable(name: "members")]
+    #[ORM\ManyToMany(targetEntity: Society::class, mappedBy: 'members')]
     private Collection $societies;
 
     public function __construct()
@@ -52,6 +52,8 @@ class User
         $this->eventsAttended = new ArrayCollection();
         $this->eventsCreated = new ArrayCollection();
         $this->societies = new ArrayCollection();
+        $this->profilePicture = "/images/account/default.jpg";
+        $this->active = true;
     }
 
     /**
@@ -184,11 +186,16 @@ class User
 
     /**
      * @param Event $event
+     * @return User
      */
-    public function attendEvent(Event $event): void
+    public function attendEvent(Event $event): User
     {
-        $this->eventsAttended->add($event);
-        $event->addAttendee($this);
+        if (!$this->eventsAttended->contains($event)) {
+            $this->eventsAttended->add($event);
+            $event->addAttendee($this);
+        }
+
+        return $this;
     }
 
     /**
@@ -213,8 +220,29 @@ class User
     public function enterSociety(Society $society): void
     {
         $this->societies->add($society);
-        $society->addMember($this);
     }
 
+    /**
+     * @return Collection
+     */
+    public function getSocieties(): Collection
+    {
+        return $this->societies;
+    }
+
+    public function leaveSociety(Society $society): void
+    {
+        $this->societies->removeElement($society);
+    }
+
+    public function unattendedEvent(Event $event): self
+    {
+        if ($this->eventsAttended->contains($event)) {
+            $this->eventsAttended->removeElement($event);
+            $event->removeAttendee($this);
+        }
+
+        return $this;
+    }
 
 }

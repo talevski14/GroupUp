@@ -20,7 +20,11 @@
       "Controllers\\": "./src/controllers/",
       "Core\\": "./src/core/",
       "Middleware\\": "./src/middleware",
-      "App\\Error\\Renderer\\" : "./src/Error/Renderer"
+      "App\\Error\\Renderer\\" : "./src/Error/Renderer",
+      "Services\\": "./src/services",
+      "Models\\": "./src/models",
+      "Repositories\\": "./src/repositories",
+      "Exceptions\\": "./src/exceptions"
     }
   }
 }

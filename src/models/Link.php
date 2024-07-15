@@ -1,13 +1,14 @@
 <?php
 
-namespace models;
+namespace Models;
 
 use DateTime;
 
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\Collection;
+use Repositories\LinkRepository;
 
-#[ORM\Entity]
+#[ORM\Entity (repositoryClass: LinkRepository::class)]
 #[ORM\Table(name: 'links')]
 class Link
 {

@@ -1,13 +1,14 @@
 <?php
 
-namespace models;
+namespace Models;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 
 use Doctrine\ORM\Mapping as ORM;
+use Repositories\SocietyRepository;
 
-#[ORM\Entity]
+#[ORM\Entity (repositoryClass: SocietyRepository::class)]
 #[ORM\Table(name: 'societies')]
 class Society
 {
@@ -17,21 +18,22 @@ class Society
     private int|null $id;
     #[ORM\Column(type: 'string', length: 100)]
     private string $name;
-    #[ORM\Column(type: 'string', length: 500, nullable: true, options: ["default"=>""])]
+    #[ORM\Column(type: 'string', length: 500, nullable: true, options: ["default" => ""])]
     private string $description;
-    #[ORM\Column(type: 'string', length: 200, nullable: true, options: ["default"=>"/images/society/banner.jpg"])]
+    #[ORM\Column(type: 'string', length: 200, nullable: true, options: ["default" => "/images/society/banner.jpg"])]
     private string $banner;
 
     /** @var Collection<int, Link> */
-    #[ORM\OneToMany(targetEntity: Link::class, mappedBy: "society")]
+    #[ORM\OneToMany(targetEntity: Link::class, mappedBy: "society", cascade: ['persist', 'remove'])]
     private Collection $links;
 
     /** @var Collection<int, Event> */
-    #[ORM\OneToMany(targetEntity: Event::class, mappedBy: "society")]
+    #[ORM\OneToMany(targetEntity: Event::class, mappedBy: "society", cascade: ['persist', 'remove'])]
     private Collection $events;
 
     /** @var Collection<int, User> */
-    #[ORM\ManyToMany(targetEntity: User::class, mappedBy: "society")]
+    #[ORM\ManyToMany(targetEntity: User::class, inversedBy: "society")]
+    #[ORM\JoinTable(name: "members")]
     private Collection $members;
 
     public function __construct()
@@ -39,6 +41,7 @@ class Society
         $this->links = new ArrayCollection();
         $this->events = new ArrayCollection();
         $this->members = new ArrayCollection();
+        $this->banner = "/images/society/banner.jpg";
     }
 
     /**
@@ -143,7 +146,12 @@ class Society
     public function addMember(User $member): void
     {
         $this->members->add($member);
+        $member->enterSociety($this);
     }
 
-
+    public function removeMember(User $member): void
+    {
+        $member->leaveSociety($this);
+        $this->members->removeElement($member);
+    }
 }

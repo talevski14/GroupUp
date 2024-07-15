@@ -98,8 +98,8 @@
                 </div>
             </div>
             <div class="mt-5">
-                {% if events %}
-                {% for event in events %}
+                {% if events[0] %}
+                {% for event in events[0] %}
                 <div style="height: 630px; box-shadow: 0 4px 8px 0 rgba(0,0,0,0.5); border-radius: 10px; background: #f0f0f0">
                     <div style="height: 64px; border-bottom: gray solid 2px;">
                         <div style="width: 100%; height: 100%; float: left;" class="mt-2">
@@ -344,7 +344,7 @@
                 </div>
                 {% endfor %}
                 {% endif %}
-                {% if not events %}
+                {% if not events[0] %}
                 <div class="ml-22 mt-24">
                     <h1 class="text-center text-gray-600 text-3xl">Currently, there are no events in this society.</h1>
                 </div>
