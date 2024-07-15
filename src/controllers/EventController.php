@@ -29,12 +29,11 @@ class EventController extends Controller
         $passedPage = isset($_GET['passed']) && $_GET['passed'] === 'true';
 
         $id = (int)$args['id'];
-//        $members = $this->societyService->getMembersDisplay($id);
-        $members = [];
+        $members = $this->societyService->getMembersDisplay($id);
         $events = [];
-        $eventIDs = [];
+        $eventIDs = "";
         $eventsPassed = [];
-        $eventIDsPassed = [];
+        $eventIDsPassed = "";
 
         $eventsObj = $this->eventService->getEventsForSociety($id);
 
@@ -43,13 +42,12 @@ class EventController extends Controller
                 $weatherDate = $this->eventService->getWeatherEvent($event);
                 $weatherAPI = $this->container->get("weather");
                 $weather = $weatherAPI->getWeather($weatherDate, $event->getLat(), $event->getLon());
-
                 if($passedPage && $event->isPassed()){
                     $eventsPassed[] = $this->eventService->getPassedEventsForSocietyDisplay($id, $weather);
-                    $eventIDsPassed[] = $event->getId();
+                    $eventIDsPassed = $eventIDsPassed . $event->getId() . " ";
                 } elseif(!$passedPage && !$event->isPassed()) {
                     $events[] = $this->eventService->getOnGoingEventsForSocietyDisplay($id, $weather);
-                    $eventIDs[] = $event->getId();
+                    $eventIDs = $eventIDs . $event->getId() . " ";
                 }
             }
         }
@@ -121,7 +119,7 @@ class EventController extends Controller
             ]);
         }
 
-        $eventId = $this->eventService->addEvent($data, $_SESSION["user"]->getId(), $args["id"]);
+        $eventId = $this->eventService->addEvent($data, $_SESSION["user"]->getUserId(), $args["id"]);
 
         header("location: /society/" . $args['id']);
         return $response;
@@ -131,7 +129,7 @@ class EventController extends Controller
     {
         $data = $request->getParsedBody();
 
-        $userId = $_SESSION['user']->getId();
+        $userId = $_SESSION['user']->getUserId();
         $societyId = $this->commentService->addComment($data, $userId);
 
         header("location: /society/" . $societyId);
@@ -141,10 +139,12 @@ class EventController extends Controller
     public function response(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
         $data = $request->getParsedBody();
-        $eventID = $data['event'];
-        $userID = $_SESSION['user']->getId();
+        $eventID = (int)$data['event'];
+        $userID = (int)$_SESSION['user']->getUserId();
 
-        $societyId = $this->eventService->attendEvent($userID, $eventID);
+        $_response = $data['_response'];
+
+        $societyId = $this->eventService->attendEvent($userID, $eventID, $_response);
 
         header("location: /society/" . $societyId);
         return $response;
@@ -163,7 +163,6 @@ class EventController extends Controller
     public function edit(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
         $id = $args['idEvent'];
-        $database = $this->container->get("db");
 
         $username = $_SESSION['user']->getUsername();
 
@@ -174,7 +173,7 @@ class EventController extends Controller
         $dateArr = explode(' ', $date);
         $date = $dateArr[0] . ' ' . $dateArr[1];
 
-        $data = $this->eventService->getEventById($id);
+        $data = $this->eventService->getEventByIdForDisplay($id);
 
         return $this->container->get("view")->render($response, "event/edit.view.php", [
                 "profileimg" => $user->getProfilePicture(),

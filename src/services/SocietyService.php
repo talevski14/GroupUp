@@ -8,7 +8,7 @@ use Models\User;
 
 interface SocietyService
 {
-    public function addNewSociety(string $name, string $desc, User $creator) : int;
+    public function addNewSociety(string $name, string $desc, string $creatorUsername) : int;
     public function addBanner(int $societyId, string $banner);
     public function getSociety(int $societyId) : Society;
     public function leaveSociety(int $userId, int $societyId);

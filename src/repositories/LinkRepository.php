@@ -24,4 +24,13 @@ class LinkRepository extends EntityRepository
     {
         return $this->findOneBy(["society" => $society]);
     }
+
+    public function saveLink($link): ?int
+    {
+        $entityManager = $this->getEntityManager();
+
+        $entityManager->persist($link);
+        $entityManager->flush();
+        return $link->getId();
+    }
 }

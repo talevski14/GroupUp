@@ -39,7 +39,7 @@ class Event
     private Society $society;
 
     /** @var Collection<int, Comment> */
-    #[ORM\OneToMany(targetEntity: Comment::class, mappedBy: "event")]
+    #[ORM\OneToMany(targetEntity: Comment::class, mappedBy: "event", cascade: ['persist', 'remove'])]
     private Collection $comments;
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: "eventsCreated")]
     private User $creator;
@@ -242,6 +242,16 @@ class Event
         if (!$this->attendees->contains($attendee)) {
             $this->attendees->add($attendee);
             $attendee->attendEvent($this);
+        }
+
+        return $this;
+    }
+
+    public function removeAttendee(User $attendee): Event
+    {
+        if ($this->attendees->contains($attendee)) {
+            $this->attendees->removeElement($attendee);
+            $attendee->unattendedEvent($this);
         }
 
         return $this;

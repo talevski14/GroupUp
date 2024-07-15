@@ -14,19 +14,19 @@ interface EventService
 
     public function getEventsForSociety(int $societyId): Collection;
 
-    public function getOnGoingEventsForSocietyDisplay(int $societyId, string $weather): Collection;
+    public function getOnGoingEventsForSocietyDisplay(int $societyId, array $weather): ?array;
 
-    public function getPassedEventsForSocietyDisplay(int $societyId, string $weather): Collection;
+    public function getPassedEventsForSocietyDisplay(int $societyId, array $weather): ?array;
 
     public function getAttendeesForEventDisplay(Event $event): array;
 
-    public function getUserAttendingEvent(User $user, Event $event): bool;
+    public function getUserAttendingEvent(String $username, Event $event): bool;
 
     public function getCommentsForEventDisplay(Event $event): array;
 
     public function getCreatorForEventDisplay(Event $event): array;
 
-    public function getUserCanEditEvent(User $user, Event $event): bool;
+    public function getUserCanEditEvent(string $username, Event $event): bool;
 
     public function getEventCreatedOn(Event $event): string;
 
@@ -40,11 +40,13 @@ interface EventService
 
     public function addEvent(object|array|null $data, int $creatorId, int $societyId): int;
 
-    public function attendEvent(int $userId, int $eventId): int;
+    public function attendEvent(int $userId, int $eventId, string $response): int;
 
     public function deleteEvent(int $eventID): int;
 
     public function updateEvent(object|array|null $data, int $idEvent): int;
 
     public function getEventById(int $id): Event;
+
+    public function getEventByIdForDisplay(int $id): array;
 }

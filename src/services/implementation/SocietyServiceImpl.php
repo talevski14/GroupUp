@@ -22,14 +22,16 @@ class SocietyServiceImpl implements SocietyService
         $this->entityManager = $entityManager;
     }
 
-    public function addNewSociety(string $name, string $desc, User $creator): int
+    public function addNewSociety(string $name, string $desc, string $creatorUsername): int
     {
+        $creator = $this->entityManager->getRepository(User::class)->findUserByUsername($creatorUsername);
         $society = new Society();
         $society->setName($name);
         $society->setDescription($desc);
         $society->addMember($creator);
 
         $this->entityManager->getRepository(Society::class)->saveSociety($society);
+
         return $society->getId();
     }
 
@@ -52,16 +54,18 @@ class SocietyServiceImpl implements SocietyService
 
         $society->removeMember($user);
         $this->entityManager->getRepository(Society::class)->saveSociety($society);
+        $this->entityManager->getRepository(User::class)->saveUser($user);
+
         if($society->getMembers()->isEmpty()) {
             $this->entityManager->getRepository(Society::class)->removeSociety($society);
-        }
+        } else {
+            $eventsBySociety = $this->entityManager->getRepository(Event::class)->findEventsBySociety($society);
+            $eventsByMember = $this->entityManager->getRepository(Event::class)->findEventsByMember($user);
 
-        $eventsBySociety = $this->entityManager->getRepository(Event::class)->findEventsBySociety($society);
-        $eventsByMember = $this->entityManager->getRepository(Event::class)->findEventsByMember($user);
-
-        foreach ($eventsByMember as $event) {
-            if($eventsBySociety->contains($event)){
-                $this->entityManager->getRepository(Event::class)->deleteEvent($event);
+            foreach ($eventsByMember as $event) {
+                if($eventsBySociety->contains($event)){
+                    $this->entityManager->getRepository(Event::class)->deleteEvent($event);
+                }
             }
         }
     }
@@ -73,7 +77,8 @@ class SocietyServiceImpl implements SocietyService
         $link = $this->entityManager->getRepository(Link::class)->findLinkByUri($uri);
         $society = $this->entityManager->getRepository(Society::class)->findSocietyByLink($link);
 
-        $user->enterSociety($society);
+        $society->addMember($user);
+        $this->entityManager->getRepository(Society::class)->saveSociety($society);
     }
 
     public function findSocietyByUri($uri) : ?Society {
@@ -98,6 +103,7 @@ class SocietyServiceImpl implements SocietyService
             $newLink->setDateCreated();
             $newLink->setUri($newUri);
             $newLink->setSociety($society);
+            $this->entityManager->getRepository(Link::class)->saveLink($newLink);
         } else {
             $newLink = $link;
         }

@@ -24,13 +24,13 @@ class User
     private string $email;
     #[ORM\Column(type: 'string', length: 1000)]
     private string $password;
-    #[ORM\Column(type: 'string', length: 1000, nullable: true, options: ["default"=>"/images/account/default.jpg"])]
+    #[ORM\Column(type: 'string', length: 1000, nullable: true, options: ["default" => "/images/account/default.jpg"])]
     private string $profilePicture;
-    #[ORM\Column(type: 'boolean', nullable: true, options: ["default"=>true])]
+    #[ORM\Column(type: 'boolean', nullable: true, options: ["default" => true])]
     private bool $active;
 
     /** @var Collection<int, Comment> */
-    #[ORM\OneToMany(targetEntity: Comment::class, mappedBy: 'user')]
+    #[ORM\OneToMany(targetEntity: Comment::class, mappedBy: 'user', cascade: ['persist', 'remove'])]
     private Collection $comments;
 
     /** @var Collection<int, Event> */
@@ -39,12 +39,11 @@ class User
     private Collection $eventsAttended;
 
     /** @var Collection<int, Event> */
-    #[ORM\OneToMany(targetEntity: Event::class, mappedBy: 'creator')]
+    #[ORM\OneToMany(targetEntity: Event::class, mappedBy: 'creator', cascade: ['persist', 'remove'])]
     private Collection $eventsCreated;
 
     /** @var Collection<int, User> */
-    #[ORM\ManyToMany(targetEntity: Society::class, inversedBy: 'members')]
-    #[ORM\JoinTable(name: "members")]
+    #[ORM\ManyToMany(targetEntity: Society::class, mappedBy: 'members')]
     private Collection $societies;
 
     public function __construct()
@@ -217,16 +216,10 @@ class User
 
     /**
      * @param Society $society
-     * @return User
      */
-    public function enterSociety(Society $society): User
+    public function enterSociety(Society $society): void
     {
-        if(!$this->societies->contains($society)) {
-            $this->societies->add($society);
-            $society->addMember($this);
-        }
-
-        return $this;
+        $this->societies->add($society);
     }
 
     /**
@@ -237,11 +230,16 @@ class User
         return $this->societies;
     }
 
-    public function leaveSociety(Society $society) : User
+    public function leaveSociety(Society $society): void
     {
-        if($this->societies->contains($society)) {
-            $this->societies->remove($society);
-            $society->removeMember($this);
+        $this->societies->removeElement($society);
+    }
+
+    public function unattendedEvent(Event $event): self
+    {
+        if ($this->eventsAttended->contains($event)) {
+            $this->eventsAttended->removeElement($event);
+            $event->removeAttendee($this);
         }
 
         return $this;

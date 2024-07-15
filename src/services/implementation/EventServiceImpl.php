@@ -46,27 +46,27 @@ class EventServiceImpl implements EventService
         return $society->getEvents();
     }
 
-    public function getOnGoingEventsForSocietyDisplay(int $societyId, string $weather): Collection
+    public function getOnGoingEventsForSocietyDisplay(int $societyId, array $weather): ?array
     {
         $society = $this->entityManager->getRepository(Society::class)->find($societyId);
-        $events = $this->getEventsForSociety($society);
+        $events = $this->getEventsForSociety($societyId);
         foreach ($events as $event) {
             $event = $this->checkIfPassed($event);
             if(!$event->isPassed()) {
                 $attending = $this->getAttendeesForEventDisplay($event);
-                $attendBool = $this->getUserAttendingEvent($_SESSION["user"], $event);
+                $attendBool = $this->getUserAttendingEvent($_SESSION["user"]->getUsername(), $event);
 
                 $comments = $this->getCommentsForEventDisplay($event);
 
                 $creator = $this->getCreatorForEventDisplay($event);
 
-                $editable = $this->getUserCanEditEvent($_SESSION["user"], $event);
+                $editable = $this->getUserCanEditEvent($_SESSION["user"]->getUsername(), $event);
 
                 $createdOn = $this->getEventCreatedOn($event);
                 $date = $this->getEventDate($event);
                 $time = $this->getEventTime($event);
 
-                $events[] = [
+                $eventsDisplay = [
                     "id" => $event->getId(),
                     "name" => $event->getName(),
                     "creator" => $creator,
@@ -81,12 +81,14 @@ class EventServiceImpl implements EventService
                     "lon" => $event->getLon(),
                     "weather" => $weather,
                     "attendBool" => $attendBool,
-                    "passed" => $event->isPassed(),
+                    "passed" => $this->checkIfEventPassed($event->getId()),
                     "editable" => $editable
                 ];
+
+                $eventsNew[] = $eventsDisplay;
             }
         }
-        return $events;
+        return $eventsNew;
     }
 
     public function getAttendeesForEventDisplay(Event $event): array
@@ -109,8 +111,9 @@ class EventServiceImpl implements EventService
         return $attending;
     }
 
-    public function getUserAttendingEvent(User $user, Event $event): bool
+    public function getUserAttendingEvent(String $username, Event $event): bool
     {
+        $user = $this->entityManager->getRepository(User::class)->findUserByUsername($username);
         return $event->getAttendees()->contains($user);
     }
 
@@ -142,8 +145,9 @@ class EventServiceImpl implements EventService
         return $creator;
     }
 
-    public function getUserCanEditEvent(User $user, Event $event): bool
+    public function getUserCanEditEvent(string $username, Event $event): bool
     {
+        $user = $this->entityManager->getRepository(User::class)->findUserByUsername($username);
         return $event->getCreator() === $user;
     }
 
@@ -164,25 +168,25 @@ class EventServiceImpl implements EventService
 
     public function getWeatherEvent(Event $event): string
     {
-        return $event->getDateAndTime()->format("Y-m-d") . "T" . $event->getDateAndTime()->format("H:i") . ":00";
+        return $event->getDateAndTime()->format("Y-m-d") . "T" . $event->getDateAndTime()->format("H") . ":00";
     }
 
-    public function getPassedEventsForSocietyDisplay(int $societyId, string $weather): Collection
+    public function getPassedEventsForSocietyDisplay(int $societyId, array $weather): ?array
     {
         $society = $this->entityManager->getRepository(Society::class)->find($societyId);
-        $events = $this->getEventsForSociety($society);
+        $events = $this->getEventsForSociety($societyId);
         foreach ($events as $event) {
             $event = $this->checkIfPassed($event);
-            if(!$event->isPassed()) {
+            if($event->isPassed()) {
                 $attending = $this->getAttendeesForEventDisplay($event);
-                $attendBool = $this->getUserAttendingEvent($_SESSION["user"], $event);
+                $attendBool = $this->getUserAttendingEvent($_SESSION["user"]->getUsername(), $event);
                 $comments = $this->getCommentsForEventDisplay($event);
                 $creator = $this->getCreatorForEventDisplay($event);
                 $createdOn = $this->getEventCreatedOn($event);
                 $date = $this->getEventDate($event);
                 $time = $this->getEventTime($event);
 
-                $events[] = [
+                $eventsDisplay = [
                     "id" => $event->getId(),
                     "name" => $event->getName(),
                     "creator" => $creator,
@@ -197,11 +201,23 @@ class EventServiceImpl implements EventService
                     "lon" => $event->getLon(),
                     "weather" => $weather,
                     "attendBool" => $attendBool,
-                    "passed" => $event->isPassed()
+                    "passed" => $this->checkIfEventPassed($event->getId())
                 ];
+
+                $eventsNew[] = $eventsDisplay;
             }
         }
-        return $events;
+        return $eventsNew;
+    }
+
+    private function checkIfEventPassed(int $eventId): bool
+    {
+        $event = $this->getEventById($eventId);
+        if($event->isPassed()){
+            return true;
+        }
+
+        return false;
     }
 
     public function validateEvent(object|array|null $data): Validation
@@ -247,12 +263,16 @@ class EventServiceImpl implements EventService
         return $event->getId();
     }
 
-    public function attendEvent(int $userId, int $eventId): int
+    public function attendEvent(int $userId, int $eventId, string $response): int
     {
         $user = $this->entityManager->getRepository(User::class)->find($userId);
         $event = $this->entityManager->getRepository(Event::class)->find($eventId);
+        if($response=="true") {
+            $event->addAttendee($user);
+        } else {
+            $event->removeAttendee($user);
+        }
 
-        $event->addAttendee($user);
         $this->entityManager->getRepository(Event::class)->saveEvent($event);
 
         return $event->getSociety()->getId();
@@ -287,5 +307,22 @@ class EventServiceImpl implements EventService
     public function getEventById(int $id): Event
     {
         return $this->entityManager->getRepository(Event::class)->find($id);
+    }
+
+    public function getEventByIdForDisplay(int $id): array
+    {
+        $event = $this->getEventById($id);
+
+        $eventDisplay = [
+            "society"=>$event->getSociety()->getId(),
+            "name"=>$event->getName(),
+            "date_and_time"=>$event->getDateAndTime()->format('Y-m-d\TH:i'),
+            "lat"=>$event->getLat(),
+            "lon"=>$event->getLon(),
+            "location"=>$event->getLocation(),
+            "description"=>$event->getDescription()
+        ];
+
+        return $eventDisplay;
     }
 }

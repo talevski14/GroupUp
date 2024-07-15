@@ -28,11 +28,6 @@ class SocietyRepository extends EntityRepository
 
     public function findSocietyByLink(Link $link) : ?Society
     {
-        $qb = $this->createQueryBuilder('s')
-            ->innerJoin('s.links', 'l')
-            ->where('l = :link')
-            ->setParameter('link', $link);
-
-        return $qb->getQuery()->getResult();
+        return $link->getSociety();
     }
 }

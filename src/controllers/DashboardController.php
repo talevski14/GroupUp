@@ -49,8 +49,6 @@ class DashboardController extends Controller
      */
     public function create(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
-        $database = $this->container->get("db");
-
         $username = $_SESSION['user']->getUsername();
 
         $userDb = $this->userService->getUserByUsername($username);
@@ -75,12 +73,11 @@ class DashboardController extends Controller
 
         $description = $data["description"];
 
-        $userDb = $this->userService->getUserByUsername($username);
         $entityManager = $this->container->get("entityManager");
 
         $name = $data["name"];
 
-        $societyID = $this->societyService->addNewSociety($name, $description, $userDb);
+        $societyID = $this->societyService->addNewSociety($name, $description, $username);
 
         $files = $request->getUploadedFiles();
 
@@ -119,7 +116,6 @@ class DashboardController extends Controller
 
         $link = $this->linkService->findLinkByUri($id);
         if($link !== null) {
-
             $isValid = $this->linkService->checkIfValid($id);
 
             $username = $_SESSION['user']->getUsername();
