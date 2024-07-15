@@ -13,7 +13,8 @@
     "robmorgan/phinx": "^0.16.1",
     "doctrine/orm": "^3.2",
     "symfony/yaml": "^6.4",
-    "symfony/cache": "^6.4"
+    "symfony/cache": "^6.4",
+    "predis/predis": "^2.2"
   },
   "autoload": {
     "psr-4": {
