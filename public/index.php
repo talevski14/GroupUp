@@ -35,12 +35,9 @@ $app->add(
 $app->add(TwigMiddleware::createFromContainer($app));
 
 $displayErrorDetails = (bool)($_ENV['DEBUG'] ?? false);
-$errorMiddleware = $app->addErrorMiddleware(true, true, true);
+$errorMiddleware = $app->addErrorMiddleware($displayErrorDetails, true, true);
 $errorHandler = $errorMiddleware->getDefaultErrorHandler();
-//$errorHandler->registerErrorRenderer('text/html', HtmlErrorRenderer::class);
-
-error_reporting(E_ALL);
-ini_set('display_errors', '1');
+$errorHandler->registerErrorRenderer('text/html', HtmlErrorRenderer::class);
 
 require __DIR__ . "/../src/controllers/routes.php";
 
