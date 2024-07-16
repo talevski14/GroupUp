@@ -14,9 +14,9 @@ interface EventService
 
     public function getEventsForSociety(int $societyId): Collection;
 
-    public function getOnGoingEventsForSocietyDisplay(int $societyId, array $weather): ?array;
+    public function getOnGoingEventsForSocietyDisplay(int $societyId): ?array;
 
-    public function getPassedEventsForSocietyDisplay(int $societyId, array $weather): ?array;
+    public function getPassedEventsForSocietyDisplay(int $societyId): ?array;
 
     public function getAttendeesForEventDisplay(Event $event): array;
 

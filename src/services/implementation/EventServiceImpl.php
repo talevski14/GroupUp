@@ -9,20 +9,26 @@ use Models\Comment;
 use Models\Event;
 use Models\Society;
 use Models\User;
+use Predis\Client;
 use Rakit\Validation\Validation;
 use Rakit\Validation\Validator;
+use Services\caching\CachingDataService;
+use Services\caching\DataService;
 use Services\EventService;
 
 class EventServiceImpl implements EventService
 {
     private EntityManagerInterface $entityManager;
+    private Client $client;
 
     /**
      * @param EntityManagerInterface $entityManager
+     * @param Client $client
      */
-    public function __construct(EntityManagerInterface $entityManager)
+    public function __construct(EntityManagerInterface $entityManager, Client $client)
     {
         $this->entityManager = $entityManager;
+        $this->client = $client;
     }
 
     public function checkIfPassed(Event $event): Event
@@ -46,13 +52,13 @@ class EventServiceImpl implements EventService
         return $society->getEvents();
     }
 
-    public function getOnGoingEventsForSocietyDisplay(int $societyId, array $weather): ?array
+    public function getOnGoingEventsForSocietyDisplay(int $societyId): ?array
     {
         $society = $this->entityManager->getRepository(Society::class)->find($societyId);
         $events = $this->getEventsForSociety($societyId);
         foreach ($events as $event) {
             $event = $this->checkIfPassed($event);
-            if(!$event->isPassed()) {
+            if (!$event->isPassed()) {
                 $attending = $this->getAttendeesForEventDisplay($event);
                 $attendBool = $this->getUserAttendingEvent($_SESSION["user"]->getUsername(), $event);
 
@@ -79,7 +85,6 @@ class EventServiceImpl implements EventService
                     "location" => $event->getLocation(),
                     "lat" => $event->getLat(),
                     "lon" => $event->getLon(),
-                    "weather" => $weather,
                     "attendBool" => $attendBool,
                     "passed" => $this->checkIfEventPassed($event->getId()),
                     "editable" => $editable
@@ -111,7 +116,7 @@ class EventServiceImpl implements EventService
         return $attending;
     }
 
-    public function getUserAttendingEvent(String $username, Event $event): bool
+    public function getUserAttendingEvent(string $username, Event $event): bool
     {
         $user = $this->entityManager->getRepository(User::class)->findUserByUsername($username);
         return $event->getAttendees()->contains($user);
@@ -120,18 +125,33 @@ class EventServiceImpl implements EventService
     public function getCommentsForEventDisplay(Event $event): array
     {
         $comments = [];
-        $commentsEvent = $event->getComments();
-        if (!$commentsEvent->isEmpty()) {
+        $commentsEvent = $this->getCommentsForEvent($event);
+        if (!empty($commentsEvent)) {
             foreach ($commentsEvent as $comment) {
-                $user = $comment->getUser();
-                $comments[] = [
-                    'photo' => $user->getProfilePicture(),
-                    'username' => $user->getUsername(),
-                    'body' => $comment->getBody()
-                ];
+                if (is_array($comment)) {
+                    $comments[] = [
+                        'photo' => $comment["photo"],
+                        'username' => $comment["username"],
+                        'body' => $comment["body"]
+                    ];
+                } else {
+                    $comments[] = [
+                        'photo' => $comment->photo,
+                        'username' => $comment->username,
+                        'body' => $comment->body
+                    ];
+                }
             }
         }
         return $comments;
+    }
+
+    public function getCommentsForEvent(Event $event): ?array
+    {
+        $dataService = new DataService();
+        $cachingDataService = new CachingDataService($dataService, $this->client);
+
+        return $cachingDataService->getCommentsForEvent($event->getId());
     }
 
     public function getCreatorForEventDisplay(Event $event): array
@@ -171,13 +191,13 @@ class EventServiceImpl implements EventService
         return $event->getDateAndTime()->format("Y-m-d") . "T" . $event->getDateAndTime()->format("H") . ":00";
     }
 
-    public function getPassedEventsForSocietyDisplay(int $societyId, array $weather): ?array
+    public function getPassedEventsForSocietyDisplay(int $societyId): ?array
     {
         $society = $this->entityManager->getRepository(Society::class)->find($societyId);
         $events = $this->getEventsForSociety($societyId);
         foreach ($events as $event) {
             $event = $this->checkIfPassed($event);
-            if($event->isPassed()) {
+            if ($event->isPassed()) {
                 $attending = $this->getAttendeesForEventDisplay($event);
                 $attendBool = $this->getUserAttendingEvent($_SESSION["user"]->getUsername(), $event);
                 $comments = $this->getCommentsForEventDisplay($event);
@@ -199,7 +219,6 @@ class EventServiceImpl implements EventService
                     "location" => $event->getLocation(),
                     "lat" => $event->getLat(),
                     "lon" => $event->getLon(),
-                    "weather" => $weather,
                     "attendBool" => $attendBool,
                     "passed" => $this->checkIfEventPassed($event->getId())
                 ];
@@ -213,7 +232,7 @@ class EventServiceImpl implements EventService
     private function checkIfEventPassed(int $eventId): bool
     {
         $event = $this->getEventById($eventId);
-        if($event->isPassed()){
+        if ($event->isPassed()) {
             return true;
         }
 
@@ -267,7 +286,7 @@ class EventServiceImpl implements EventService
     {
         $user = $this->entityManager->getRepository(User::class)->find($userId);
         $event = $this->entityManager->getRepository(Event::class)->find($eventId);
-        if($response=="true") {
+        if ($response == "true") {
             $event->addAttendee($user);
         } else {
             $event->removeAttendee($user);
@@ -314,13 +333,13 @@ class EventServiceImpl implements EventService
         $event = $this->getEventById($id);
 
         $eventDisplay = [
-            "society"=>$event->getSociety()->getId(),
-            "name"=>$event->getName(),
-            "date_and_time"=>$event->getDateAndTime()->format('Y-m-d\TH:i'),
-            "lat"=>$event->getLat(),
-            "lon"=>$event->getLon(),
-            "location"=>$event->getLocation(),
-            "description"=>$event->getDescription()
+            "society" => $event->getSociety()->getId(),
+            "name" => $event->getName(),
+            "date_and_time" => $event->getDateAndTime()->format('Y-m-d\TH:i'),
+            "lat" => $event->getLat(),
+            "lon" => $event->getLon(),
+            "location" => $event->getLocation(),
+            "description" => $event->getDescription()
         ];
 
         return $eventDisplay;

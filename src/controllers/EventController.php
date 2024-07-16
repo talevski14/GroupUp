@@ -30,24 +30,26 @@ class EventController extends Controller
 
         $id = (int)$args['id'];
         $members = $this->societyService->getMembersDisplay($id);
-        $events = [];
+        $events = $this->eventService->getOnGoingEventsForSocietyDisplay($id);
         $eventIDs = "";
-        $eventsPassed = [];
+        $eventsPassed = $this->eventService->getPassedEventsForSocietyDisplay($id);
         $eventIDsPassed = "";
+        $eventsWeather = [];
 
         $eventsObj = $this->eventService->getEventsForSociety($id);
 
         if (!$eventsObj->isEmpty()) {
             foreach ($eventsObj as $event) {
-                $weatherDate = $this->eventService->getWeatherEvent($event);
-                $weatherAPI = $this->container->get("weather");
-                $weather = $weatherAPI->getWeather($weatherDate, $event->getLat(), $event->getLon());
                 if($passedPage && $event->isPassed()){
-                    $eventsPassed[] = $this->eventService->getPassedEventsForSocietyDisplay($id, $weather);
                     $eventIDsPassed = $eventIDsPassed . $event->getId() . " ";
                 } elseif(!$passedPage && !$event->isPassed()) {
-                    $events[] = $this->eventService->getOnGoingEventsForSocietyDisplay($id, $weather);
+                    $weatherDate = $this->eventService->getWeatherEvent($event);
+                    $weatherAPI = $this->container->get("weather");
+                    $weather = $weatherAPI->getWeather($weatherDate, $event->getLat(), $event->getLon());
                     $eventIDs = $eventIDs . $event->getId() . " ";
+                    $eventsWeather[$event->getId()] = [
+                        "weather" => $weather
+                    ];
                 }
             }
         }
@@ -75,7 +77,8 @@ class EventController extends Controller
             "header" => "On-going events",
             "passsed" => $passedPage,
             "username" =>$_SESSION['user']->getUsername(),
-            "welcomeMessage" => $welcomeMessage
+            "welcomeMessage" => $welcomeMessage,
+            "eventsWeather" => $eventsWeather
         ]);
     }
 
