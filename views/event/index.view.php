@@ -98,8 +98,8 @@
                 </div>
             </div>
             <div class="mt-5">
-                {% if events[0] %}
-                {% for event in events[0] %}
+                {% if events %}
+                {% for event in events %}
                 <div style="height: 630px; box-shadow: 0 4px 8px 0 rgba(0,0,0,0.5); border-radius: 10px; background: #f0f0f0">
                     <div style="height: 64px; border-bottom: gray solid 2px;">
                         <div style="width: 100%; height: 100%; float: left;" class="mt-2">
@@ -202,35 +202,35 @@
                                         <div style="height: 25%; width: 100%; ">
                                             <h1 class="text-s text-gray-900 ml-3"><b>The weather</b></h1>
                                         </div>
-                                        {% if event['weather']['temperature'] %}
+                                        {% if eventsWeather[event.id]['weather']['temperature'] %}
                                         <div style="height: 25%; width: 100%" class="ml-3">
                                             <img src="/images/weather/sun.png" alt="sun"
                                                  style="height: 25px; width: 25px; float: left;">
-                                            <h1 style="float: left;" class="ml-3">{{event['weather']['temperature']}}
+                                            <h1 style="float: left;" class="ml-3">{{eventsWeather[event.id]['weather']['temperature']}}
                                                 °C</h1>
                                         </div>
                                         {% endif %}
 
-                                        {% if not event['weather']['temperature'] %}
+                                        {% if not eventsWeather[event.id]['weather']['temperature'] %}
                                         <div style="height: 25%; width: 100%" class="ml-3">
                                             <h1 class="text-s text-gray-400">At this moment we don't have information
                                                 about the weather. Come back another day!</h1>
                                         </div>
                                         {% endif %}
 
-                                        {% if event['weather']['rain'] %}
+                                        {% if eventsWeather[event.id]['weather']['rain'] %}
                                         <div style="height: 25%; width: 100%" class="ml-3">
                                             <img src="/images/weather/heavy-rain.png" alt="sun"
                                                  style="height: 25px; width: 25px; float: left;">
-                                            <h1 style="float: left;" class="ml-3">{{event['weather']['rain']}} mm</h1>
+                                            <h1 style="float: left;" class="ml-3">{{eventsWeather[event.id]['weather']['rain']}} mm</h1>
                                         </div>
                                         {% endif %}
 
-                                        {% if event['weather']['snow'] %}
+                                        {% if eventsWeather[event.id]['weather']['snow'] %}
                                         <div style="height: 25%; width: 100%" class="ml-3">
                                             <img src="/images/weather/snowflake.png" alt="sun"
                                                  style="height: 25px; width: 25px; float: left;">
-                                            <h1 style="float: left;" class="ml-3">{{event['weather']['snow']}} mm</h1>
+                                            <h1 style="float: left;" class="ml-3">{{eventsWeather[event.id]['weather']['snow']}} mm</h1>
                                         </div>
                                         {% endif %}
 

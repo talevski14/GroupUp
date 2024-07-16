@@ -2,3 +2,7 @@
 /mysql
 /vendor
 /src/cache
+public/images/account/*
+!public/images/account/default.jpg
+public/images/society/*
+!public/images/society/banner.jpg

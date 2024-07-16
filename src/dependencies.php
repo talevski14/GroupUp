@@ -14,6 +14,7 @@ use Services\SocietyService;
 use Services\UserService;
 use Slim\Flash\Messages;
 use Slim\Views\Twig;
+use Predis\Client as PClient;
 
 $container->set('flash', function() {
     $storage = [];
@@ -65,6 +66,14 @@ $container->set('settings', function () {
     ];
 });
 
+$container->set('redis', function () {
+    return new PClient([
+        'scheme' => 'tcp',
+        'host' => 'redis',
+        'port' => 6379
+    ]);
+});
+
 $container->set('entityManager', function () use ($container) {
     return $container->get('settings')['doctrine'];
 });
@@ -82,9 +91,9 @@ $container->set('linkService', function ($container) {
 });
 
 $container->set('eventService', function ($container) {
-    return new Services\implementation\EventServiceImpl($container->get('entityManager'));
+    return new Services\implementation\EventServiceImpl($container->get('entityManager'), $container->get('redis'));
 });
 
 $container->set('commentService', function ($container) {
-    return new Services\implementation\CommentServiceImpl($container->get('entityManager'));
+    return new Services\implementation\CommentServiceImpl($container->get('entityManager'), $container->get('redis'));
 });
