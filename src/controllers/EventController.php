@@ -114,6 +114,7 @@ class EventController extends Controller
             return $this->container->get("view")->render($response, "event/create.view.php", [
                 'profileimg' => $_SESSION["user"]->getProfilePicture(),
                 'name' => $errors->get("name"),
+                'id' => $args['id'],
                 'event-time' => $errors->get("event-time"),
                 'description' => $errors->get("description"),
                 'lat' => $errors->get("_lat"),
@@ -122,7 +123,8 @@ class EventController extends Controller
             ]);
         }
 
-        $eventId = $this->eventService->addEvent($data, $_SESSION["user"]->getUserId(), $args["id"]);
+        $event = $this->eventService->addEvent($data, $_SESSION["user"]->getUserId(), $args["id"]);
+        $this->notificationService->queueNotification($event);
 
         header("location: /society/" . $args['id']);
         return $response;

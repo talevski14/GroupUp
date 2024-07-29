@@ -97,3 +97,7 @@ $container->set('eventService', function ($container) {
 $container->set('commentService', function ($container) {
     return new Services\implementation\CommentServiceImpl($container->get('entityManager'), $container->get('redis'));
 });
+
+$container->set('notificationService', function ($container) {
+    return new Services\implementation\NotificationServiceImpl($container->get('entityManager'));
+});

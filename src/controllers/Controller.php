@@ -12,6 +12,7 @@ use Services\implementation\EventServiceImpl;
 use Services\implementation\SocietyServiceImpl;
 use Services\implementation\UserServiceImpl;
 use Services\LinkService;
+use Services\NotificationService;
 use Services\SocietyService;
 use Services\UserService;
 use Slim\Flash\Messages;
@@ -24,6 +25,7 @@ class Controller
     protected LinkService $linkService;
     protected EventService $eventService;
     protected CommentService $commentService;
+    protected NotificationService $notificationService;
     public function __construct($container)
     {
         $this->container = $container;
@@ -32,5 +34,6 @@ class Controller
         $this->linkService = $container->get('linkService');
         $this->eventService = $container->get('eventService');
         $this->commentService = $container->get('commentService');
+        $this->notificationService = $container->get('notificationService');
     }
 }

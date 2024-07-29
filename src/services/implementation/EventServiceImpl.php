@@ -264,7 +264,7 @@ class EventServiceImpl implements EventService
     /**
      * @throws \Exception
      */
-    public function addEvent(object|array|null $data, int $creatorId, int $societyId): int
+    public function addEvent(object|array|null $data, int $creatorId, int $societyId): Event
     {
         $user = $this->entityManager->getRepository(User::class)->find($creatorId);
         $society = $this->entityManager->getRepository(Society::class)->find($societyId);
@@ -279,7 +279,7 @@ class EventServiceImpl implements EventService
         $event->setDateAndTime(new DateTime($data["event-time"]));
         $event->setLocation($data["_location"], $data["_lat"], $data["_lon"]);
         $this->entityManager->getRepository(Event::class)->saveEvent($event);
-        return $event->getId();
+        return $event;
     }
 
     public function attendEvent(int $userId, int $eventId, string $response): int
