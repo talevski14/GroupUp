@@ -7,6 +7,7 @@ use Controllers\HomeController;
 use Core\Database;
 use Core\Weather;
 use GuzzleHttp\Client;
+use PhpAmqpLib\Connection\AMQPStreamConnection;
 use Psr\Container\ContainerInterface;
 use Services\caching\CachingDataService;
 use Services\caching\DataService;
@@ -98,6 +99,10 @@ $container->set('eventService', function ($container) {
 
 $container->set('commentService', function ($container) {
     return new Services\implementation\CommentServiceImpl($container->get('entityManager'), $container->get('redis'));
+});
+
+$container->set('rabbitmq', function () {
+    return new AMQPStreamConnection('rabbitmq', 5672, 'guest', 'guest');
 });
 
 $container->set('notificationService', function ($container) {

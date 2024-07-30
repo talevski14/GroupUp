@@ -16,6 +16,7 @@ use Services\NotificationService;
 class NotificationServiceImpl implements NotificationService
 {
     private EntityManagerInterface $entityManager;
+    protected AMQPStreamConnection $connection;
 
     /**
      * @param EntityManagerInterface $entityManager
@@ -23,6 +24,7 @@ class NotificationServiceImpl implements NotificationService
     public function __construct(EntityManagerInterface $entityManager)
     {
         $this->entityManager = $entityManager;
+        $this->connection = new AMQPStreamConnection('rabbitmq', 5672, 'guest', 'guest');;
     }
 
     /**
@@ -33,28 +35,27 @@ class NotificationServiceImpl implements NotificationService
         $society = $event->getSociety();
         $members = $society->getMembers();
 
+        $connection = $this->connection;
+        $channel = $connection->channel();
+        $channel->queue_declare('event_notifications', false, false, false, false);
+
         foreach ($members as $member) {
-            $this->sendNotificationToQueue($member->getUserId(), $event->getId());
+            $this->sendNotificationToQueue($member->getUserId(), $event->getId(), $channel);
         }
+
+        $channel->close();
+        $connection->close();
     }
 
     /**
      * @throws Exception
      */
-    private function sendNotificationToQueue($userId, $eventId): void
+    private function sendNotificationToQueue($userId, $eventId, $channel): void
     {
-        $connection = new AMQPStreamConnection('rabbitmq', 5672, 'guest', 'guest');
-        $channel = $connection->channel();
-
-        $channel->queue_declare('event_notifications', false, false, false, false);
-
         $data = json_encode(['user_id' => $userId, 'event_id' => $eventId]);
         $msg = new AMQPMessage($data);
 
         $channel->basic_publish($msg, '', 'event_notifications');
-
-        $channel->close();
-        $connection->close();
     }
 
     public function sendMailToUserAboutEvent($userId, $eventId): void
