@@ -3,6 +3,7 @@
 namespace Services\implementation;
 
 use DateTime;
+use DI\Container;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\EntityManagerInterface;
 use Models\Comment;
@@ -19,16 +20,12 @@ use Services\EventService;
 class EventServiceImpl implements EventService
 {
     private EntityManagerInterface $entityManager;
-    private Client $client;
+    protected Container $container;
 
-    /**
-     * @param EntityManagerInterface $entityManager
-     * @param Client $client
-     */
-    public function __construct(EntityManagerInterface $entityManager, Client $client)
+    public function __construct(Container $container)
     {
-        $this->entityManager = $entityManager;
-        $this->client = $client;
+        $this->container = $container;
+        $this->entityManager = $container->get("entityManager");
     }
 
     public function checkIfPassed(Event $event): Event
@@ -56,6 +53,7 @@ class EventServiceImpl implements EventService
     {
         $society = $this->entityManager->getRepository(Society::class)->find($societyId);
         $events = $this->getEventsForSociety($societyId);
+        $eventsNew = [];
         foreach ($events as $event) {
             $event = $this->checkIfPassed($event);
             if (!$event->isPassed()) {
@@ -148,9 +146,9 @@ class EventServiceImpl implements EventService
 
     public function getCommentsForEvent(Event $event): ?array
     {
-        $dataService = new DataService();
-        $cachingDataService = new CachingDataService($dataService, $this->client);
-
+//        $dataService = new DataService();
+//        $cachingDataService = new CachingDataService($dataService, $this->client);
+        $cachingDataService = $this->container->get("cachingService");
         return $cachingDataService->getCommentsForEvent($event->getId());
     }
 
@@ -264,7 +262,7 @@ class EventServiceImpl implements EventService
     /**
      * @throws \Exception
      */
-    public function addEvent(object|array|null $data, int $creatorId, int $societyId): int
+    public function addEvent(object|array|null $data, int $creatorId, int $societyId): Event
     {
         $user = $this->entityManager->getRepository(User::class)->find($creatorId);
         $society = $this->entityManager->getRepository(Society::class)->find($societyId);
@@ -279,7 +277,7 @@ class EventServiceImpl implements EventService
         $event->setDateAndTime(new DateTime($data["event-time"]));
         $event->setLocation($data["_location"], $data["_lat"], $data["_lon"]);
         $this->entityManager->getRepository(Event::class)->saveEvent($event);
-        return $event->getId();
+        return $event;
     }
 
     public function attendEvent(int $userId, int $eventId, string $response): int

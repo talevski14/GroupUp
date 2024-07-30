@@ -2,6 +2,7 @@
 
 namespace Repositories;
 
+use DateTime;
 use Doctrine\ORM\EntityRepository;
 
 class EventRepository extends EntityRepository
@@ -30,5 +31,19 @@ class EventRepository extends EntityRepository
 
         $entityManager->persist($event);
         $entityManager->flush();
+    }
+
+    public function getEventsByDate(String $date): ?array
+    {
+        $eventsReturn = [];
+        $events = $this->findAll();
+        foreach ($events as $event) {
+            $eventDate = $event->getDateAndTime()->format("Y-m-d");
+            if($eventDate == $date)
+            {
+                $eventsReturn[] = $event;
+            }
+        }
+        return $eventsReturn;
     }
 }

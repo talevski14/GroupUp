@@ -7,7 +7,10 @@ use Controllers\HomeController;
 use Core\Database;
 use Core\Weather;
 use GuzzleHttp\Client;
+use PhpAmqpLib\Connection\AMQPStreamConnection;
 use Psr\Container\ContainerInterface;
+use Services\caching\CachingDataService;
+use Services\caching\DataService;
 use Services\implementation\SocietyServiceImpl;
 use Services\implementation\UserServiceImpl;
 use Services\SocietyService;
@@ -91,9 +94,25 @@ $container->set('linkService', function ($container) {
 });
 
 $container->set('eventService', function ($container) {
-    return new Services\implementation\EventServiceImpl($container->get('entityManager'), $container->get('redis'));
+    return new Services\implementation\EventServiceImpl($container);
 });
 
 $container->set('commentService', function ($container) {
     return new Services\implementation\CommentServiceImpl($container->get('entityManager'), $container->get('redis'));
+});
+
+$container->set('rabbitmq', function () {
+    return new AMQPStreamConnection('rabbitmq', 5672, 'guest', 'guest');
+});
+
+$container->set('notificationService', function ($container) {
+    return new Services\implementation\NotificationServiceImpl($container->get('entityManager'));
+});
+
+$container->set('dataService', function () {
+    return new DataService();
+});
+
+$container->set('cachingService', function ($container) {
+    return new CachingDataService($container->get('dataService'), $container->get('redis'));
 });

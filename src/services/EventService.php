@@ -38,7 +38,7 @@ interface EventService
 
     public function validateEvent(object|array|null $data): Validation;
 
-    public function addEvent(object|array|null $data, int $creatorId, int $societyId): int;
+    public function addEvent(object|array|null $data, int $creatorId, int $societyId): Event;
 
     public function attendEvent(int $userId, int $eventId, string $response): int;
 
