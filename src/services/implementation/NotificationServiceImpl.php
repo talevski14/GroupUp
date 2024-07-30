@@ -7,8 +7,10 @@ use Doctrine\ORM\EntityManagerInterface;
 use ErrorException;
 use Exception;
 use Models\Event;
+use Models\User;
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
+use PHPMailer\PHPMailer\PHPMailer;
 use Services\NotificationService;
 
 class NotificationServiceImpl implements NotificationService
@@ -53,5 +55,48 @@ class NotificationServiceImpl implements NotificationService
 
         $channel->close();
         $connection->close();
+    }
+
+    public function sendMailToUserAboutEvent($userId, $eventId): void
+    {
+        $user = $this->entityManager->getRepository(User::class)->find($userId);
+        $event = $this->entityManager->getRepository(Event::class)->find($eventId);
+
+        $mail = new PHPMailer(true);
+        try {
+            $mail->isSMTP();
+            $mail->Host = 'mailhog';  // MailHog container name
+            $mail->SMTPAuth = false;  // MailHog does not require authentication
+            $mail->Port = 1025;       // MailHog SMTP port
+
+            $mail->setFrom('groupup@groupup.com', 'GroupUp');
+            $mail->addAddress($user->getUsername() . '@groupup.com');
+
+            $mail->isHTML(true);
+
+            $userName = $user->getName();
+            $eventName = $event->getName();
+            $eventTime = $event->getDateAndTime()->format("H:i");
+            $eventDate = $event->getDateAndTime()->format("Y-m-d");
+            $eventLocation = $event->getLocation();
+            $eventDescription = $event->getDescription();
+            $invitorName = $event->getCreator()->getName();
+            $societyName = "ime";
+
+            $mail->Subject = "Hey {$userName}, you've been invited to {$eventName}!";
+            $mail->Body = " <h2>Hello {$userName},</h2>
+        <p>You have been invited to the following event by {$invitorName}:</p>
+        <p><strong>Event Name:</strong> {$eventName}</p>
+        <p><strong>Date:</strong> {$eventDate}</p>
+        <p><strong>Time:</strong> {$eventTime}</p>
+        <p><strong>Location:</strong> {$eventLocation}</p>
+        <p><strong>Description:</strong> {$eventDescription}</p>
+        <p>We hope to see you there!</p>";
+
+            $mail->send();
+        } catch (Exception $e) {
+            echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
+        }
+
     }
 }

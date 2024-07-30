@@ -3,6 +3,10 @@
 require 'vendor/autoload.php';
 
 use PhpAmqpLib\Connection\AMQPStreamConnection;
+use Services\implementation\NotificationServiceImpl;
+
+require_once 'src/services/implementation/NotificationServiceImpl.php';
+$entityManager = require __DIR__ . "/../../../config/doctrine.php";
 
 try {
     $connection = new AMQPStreamConnection('rabbitmq', 5672, 'guest', 'guest');
@@ -21,7 +25,11 @@ while (true) {
         $userId = $data['user_id'];
         $eventId = $data['event_id'];
 
-        echo " [x] Sent notification to user $userId for event $eventId\n";
+//        echo " [x] Sent notification to user $userId for event $eventId\n";
+        $notificationService = new NotificationServiceImpl($entityManager);
+        $notificationService->sendMailToUserAboutEvent($userId, $eventId);
+
+        $channel->basic_ack($message->getDeliveryTag());
     } else {
         break;
     }

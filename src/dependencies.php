@@ -8,6 +8,8 @@ use Core\Database;
 use Core\Weather;
 use GuzzleHttp\Client;
 use Psr\Container\ContainerInterface;
+use Services\caching\CachingDataService;
+use Services\caching\DataService;
 use Services\implementation\SocietyServiceImpl;
 use Services\implementation\UserServiceImpl;
 use Services\SocietyService;
@@ -91,7 +93,7 @@ $container->set('linkService', function ($container) {
 });
 
 $container->set('eventService', function ($container) {
-    return new Services\implementation\EventServiceImpl($container->get('entityManager'), $container->get('redis'));
+    return new Services\implementation\EventServiceImpl($container);
 });
 
 $container->set('commentService', function ($container) {
@@ -100,4 +102,12 @@ $container->set('commentService', function ($container) {
 
 $container->set('notificationService', function ($container) {
     return new Services\implementation\NotificationServiceImpl($container->get('entityManager'));
+});
+
+$container->set('dataService', function () {
+    return new DataService();
+});
+
+$container->set('cachingService', function ($container) {
+    return new CachingDataService($container->get('dataService'), $container->get('redis'));
 });

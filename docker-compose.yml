@@ -40,6 +40,7 @@ services:
     depends_on:
       - redis
       - rabbitmq
+      - mailhog
 
   redis:
     image: redis:latest
@@ -60,6 +61,15 @@ services:
     volumes:
         - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
         - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
+    networks:
+      - my_net
+
+  mailhog:
+    image: mailhog/mailhog
+    container_name: mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
     networks:
       - my_net
 
